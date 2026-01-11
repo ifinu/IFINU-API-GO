@@ -36,10 +36,9 @@ func ConectarBancoDados() error {
 
 	log.Println("✅ Conectado ao banco de dados PostgreSQL")
 
-	// Auto-migrate das tabelas
-	if err := MigrarTabelas(); err != nil {
-		return err
-	}
+	// Auto-migrate desabilitado - banco já existe do sistema Java
+	// Se necessário, executar migrations manualmente
+	log.Println("⚠️  Auto-migrate desabilitado - usando schema existente")
 
 	return nil
 }
