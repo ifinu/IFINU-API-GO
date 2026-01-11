@@ -89,6 +89,23 @@ func main() {
 		})
 	})
 
+	// Rotas de autenticação SEM /api (compatibilidade com frontend)
+	authLegacy := r.Group("/auth")
+	{
+		authLegacy.POST("/login", autenticacaoController.Login)
+		authLegacy.POST("/cadastro", autenticacaoController.Cadastro)
+		authLegacy.POST("/refresh", autenticacaoController.RefreshToken)
+		authLegacy.POST("/2fa/verificar", autenticacaoController.Verificar2FA)
+
+		authLegacyProtegido := authLegacy.Group("")
+		authLegacyProtegido.Use(middleware.AutenticacaoMiddleware())
+		{
+			authLegacyProtegido.GET("/me", autenticacaoController.Me)
+			authLegacyProtegido.POST("/2fa/gerar", autenticacaoController.Gerar2FA)
+			authLegacyProtegido.POST("/2fa/ativar", autenticacaoController.Ativar2FA)
+		}
+	}
+
 	// Grupo de rotas API
 	api := r.Group("/api")
 	{
