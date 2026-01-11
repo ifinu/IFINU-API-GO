@@ -38,7 +38,6 @@ func main() {
 	usuarioRepo := repositorio.NovoUsuarioRepositorio(config.DB)
 	clienteRepo := repositorio.NovoClienteRepositorio(config.DB)
 	cobrancaRepo := repositorio.NovoCobrancaRepositorio(config.DB)
-	assinaturaRepo := repositorio.NovoAssinaturaRepositorio(config.DB)
 	whatsappRepo := repositorio.NovoWhatsAppRepositorio(config.DB)
 
 	// Inicializar integrações
