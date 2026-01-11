@@ -183,7 +183,7 @@ func (s *CobrancaServico) AtualizarStatus(usuarioID uuid.UUID, cobrancaID int64,
 	cobranca.Status = novoStatus
 
 	// Se marcada como paga, registrar data de pagamento
-	if novoStatus == enums.StatusCobrancaPaga {
+	if novoStatus == enums.StatusCobrancaPago {
 		agora := time.Now()
 		cobranca.DataPagamento = &agora
 	}
@@ -220,14 +220,14 @@ func (s *CobrancaServico) ObterEstatisticas(usuarioID uuid.UUID) (*dto.Estatisti
 
 	// Calcular valores
 	valorPendente, _ := s.cobrancaRepo.CalcularValorTotalPorStatus(usuarioID, enums.StatusCobrancaPendente)
-	valorPago, _ := s.cobrancaRepo.CalcularValorTotalPorStatus(usuarioID, enums.StatusCobrancaPaga)
-	valorVencido, _ := s.cobrancaRepo.CalcularValorTotalPorStatus(usuarioID, enums.StatusCobrancaVencida)
+	valorPago, _ := s.cobrancaRepo.CalcularValorTotalPorStatus(usuarioID, enums.StatusCobrancaPago)
+	valorVencido, _ := s.cobrancaRepo.CalcularValorTotalPorStatus(usuarioID, enums.StatusCobrancaVencido)
 
 	return &dto.EstatisticasCobrancasResponse{
 		TotalPendente:  contagem[enums.StatusCobrancaPendente],
-		TotalPaga:      contagem[enums.StatusCobrancaPaga],
-		TotalVencida:   contagem[enums.StatusCobrancaVencida],
-		TotalCancelada: contagem[enums.StatusCobrancaCancelada],
+		TotalPaga:      contagem[enums.StatusCobrancaPago],
+		TotalVencida:   contagem[enums.StatusCobrancaVencido],
+		TotalCancelada: contagem[enums.StatusCobrancaCancelado],
 		ValorPendente:  valorPendente,
 		ValorPago:      valorPago,
 		ValorVencido:   valorVencido,
@@ -245,7 +245,6 @@ func (s *CobrancaServico) mapearParaDTO(cobranca *entidades.Cobranca) *dto.Cobra
 		DataVencimento:               cobranca.DataVencimento,
 		DataPagamento:                cobranca.DataPagamento,
 		TipoRecorrencia:              cobranca.TipoRecorrencia,
-		LinkPagamento:                cobranca.LinkPagamento,
 		NotificacaoLembreteEnviada:   cobranca.NotificacaoLembreteEnviada,
 		NotificacaoVencimentoEnviada: cobranca.NotificacaoVencimentoEnviada,
 		DataCriacao:                  cobranca.DataCriacao,

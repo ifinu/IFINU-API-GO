@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
 
 	"github.com/ifinu/ifinu-api-go/dominio/entidades"
 	"github.com/ifinu/ifinu-api-go/dominio/enums"
