@@ -1,0 +1,97 @@
+name: Deploy IFINU API GO
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy para Produção
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          port: 22
+          script: |
+            echo "🚀 Iniciando deploy da IFINU API GO..."
+
+            # Navegar para o diretório do projeto
+            cd /home/mpx/ifinu-api-go || {
+              echo "📦 Clonando repositório pela primeira vez..."
+              cd /home/mpx
+              git clone https://github.com/ifinu/IFINU-API-GO.git ifinu-api-go
+              cd ifinu-api-go
+            }
+
+            # Atualizar código
+            echo "📥 Atualizando código..."
+            git fetch origin
+            git reset --hard origin/main
+
+            # Parar containers antigos (Java e Go)
+            echo "🛑 Parando containers antigos..."
+            docker stop ifinu-api 2>/dev/null || true
+            docker rm ifinu-api 2>/dev/null || true
+            docker stop ifinu-api-java 2>/dev/null || true
+            docker rm ifinu-api-java 2>/dev/null || true
+
+            # Matar qualquer processo na porta 8080
+            echo "⚔️ Liberando porta 8080..."
+            lsof -t -i:8080 | xargs kill -9 2>/dev/null || true
+
+            # Build da imagem Docker
+            echo "🔨 Buildando imagem Docker..."
+            docker build -t ifinu-api-go:latest .
+
+            # Limpar imagens antigas
+            echo "🧹 Limpando imagens antigas..."
+            docker image prune -f
+
+            # Executar novo container
+            echo "🚀 Iniciando novo container..."
+            docker run -d \
+              -p 8080:8080 \
+              --name ifinu-api \
+              --restart unless-stopped \
+              --env-file /home/mpx/ifinu-api-go/.env \
+              ifinu-api-go:latest
+
+            # Aguardar container iniciar
+            echo "⏳ Aguardando container iniciar..."
+            sleep 5
+
+            # Verificar se está rodando
+            echo "🔍 Verificando status..."
+            docker ps | grep ifinu-api
+
+            # Health check
+            echo "💚 Testando health check..."
+            curl -f http://localhost:8080/health || exit 1
+
+            # Mostrar logs
+            echo "📋 Últimos logs:"
+            docker logs --tail 20 ifinu-api
+
+            echo "✅ Deploy concluído com sucesso!"
+
+      - name: Notificar sucesso
+        if: success()
+        run: |
+          echo "✅ Deploy realizado com sucesso!"
+          echo "🔗 API disponível em: http://api.ifinu.io"
+
+      - name: Notificar falha
+        if: failure()
+        run: |
+          echo "❌ Deploy falhou!"
+          echo "Verifique os logs acima para mais detalhes."
