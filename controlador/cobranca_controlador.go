@@ -42,7 +42,7 @@ func (ctrl *CobrancaControlador) Criar(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusCreated, "Cobrança criada com sucesso", resultado)
+	util.RespostaCriado(c, "Cobrança criada com sucesso", resultado)
 }
 
 // BuscarPorID busca uma cobrança por ID
@@ -66,7 +66,7 @@ func (ctrl *CobrancaControlador) BuscarPorID(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Cobrança encontrada", resultado)
+	util.RespostaSucesso(c, "Cobrança encontrada", resultado)
 }
 
 // Listar lista todas as cobranças do usuário
@@ -87,7 +87,7 @@ func (ctrl *CobrancaControlador) Listar(c *gin.Context) {
 			util.RespostaErro(c, http.StatusInternalServerError, "Erro ao buscar cobranças", err)
 			return
 		}
-		util.RespostaSucesso(c, http.StatusOK, "Cobranças encontradas", resultado)
+		util.RespostaSucesso(c, "Cobranças encontradas", resultado)
 		return
 	}
 
@@ -98,7 +98,7 @@ func (ctrl *CobrancaControlador) Listar(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Cobranças listadas com sucesso", resultado)
+	util.RespostaSucesso(c, "Cobranças listadas com sucesso", resultado)
 }
 
 // Atualizar atualiza uma cobrança
@@ -128,7 +128,7 @@ func (ctrl *CobrancaControlador) Atualizar(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Cobrança atualizada com sucesso", resultado)
+	util.RespostaSucesso(c, "Cobrança atualizada com sucesso", resultado)
 }
 
 // AtualizarStatus atualiza o status de uma cobrança
@@ -158,7 +158,7 @@ func (ctrl *CobrancaControlador) AtualizarStatus(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Status atualizado com sucesso", resultado)
+	util.RespostaSucesso(c, "Status atualizado com sucesso", resultado)
 }
 
 // Deletar remove uma cobrança
@@ -182,7 +182,7 @@ func (ctrl *CobrancaControlador) Deletar(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Cobrança deletada com sucesso", nil)
+	util.RespostaSucesso(c, "Cobrança deletada com sucesso", nil)
 }
 
 // ObterEstatisticas retorna estatísticas de cobranças
@@ -200,5 +200,5 @@ func (ctrl *CobrancaControlador) ObterEstatisticas(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Estatísticas obtidas com sucesso", resultado)
+	util.RespostaSucesso(c, "Estatísticas obtidas com sucesso", resultado)
 }

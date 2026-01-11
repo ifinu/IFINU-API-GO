@@ -39,7 +39,7 @@ func (ctrl *AutenticacaoControlador) Login(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Login realizado com sucesso", resultado)
+	util.RespostaSucesso(c, "Login realizado com sucesso", resultado)
 }
 
 // Cadastro registra um novo usuário
@@ -57,7 +57,7 @@ func (ctrl *AutenticacaoControlador) Cadastro(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusCreated, "Cadastro realizado com sucesso", resultado)
+	util.RespostaCriado(c, "Cadastro realizado com sucesso", resultado)
 }
 
 // RefreshToken renova o access token
@@ -75,7 +75,7 @@ func (ctrl *AutenticacaoControlador) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Token renovado com sucesso", resultado)
+	util.RespostaSucesso(c, "Token renovado com sucesso", resultado)
 }
 
 // Me retorna os dados do usuário autenticado
@@ -93,7 +93,7 @@ func (ctrl *AutenticacaoControlador) Me(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Dados do usuário", usuario)
+	util.RespostaSucesso(c, "Dados do usuário", usuario)
 }
 
 // Gerar2FA gera o QR code para configurar 2FA
@@ -111,7 +111,7 @@ func (ctrl *AutenticacaoControlador) Gerar2FA(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "QR Code gerado com sucesso", resultado)
+	util.RespostaSucesso(c, "QR Code gerado com sucesso", resultado)
 }
 
 // Ativar2FA ativa o 2FA após validar o código
@@ -135,7 +135,7 @@ func (ctrl *AutenticacaoControlador) Ativar2FA(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "2FA ativado com sucesso", nil)
+	util.RespostaSucesso(c, "2FA ativado com sucesso", nil)
 }
 
 // Verificar2FA valida o código 2FA no login
@@ -153,5 +153,5 @@ func (ctrl *AutenticacaoControlador) Verificar2FA(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Login com 2FA realizado com sucesso", resultado)
+	util.RespostaSucesso(c, "Login com 2FA realizado com sucesso", resultado)
 }

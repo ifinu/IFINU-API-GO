@@ -42,7 +42,7 @@ func (ctrl *ClienteControlador) Criar(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusCreated, "Cliente criado com sucesso", resultado)
+	util.RespostaCriado(c, "Cliente criado com sucesso", resultado)
 }
 
 // BuscarPorID busca um cliente por ID
@@ -66,7 +66,7 @@ func (ctrl *ClienteControlador) BuscarPorID(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Cliente encontrado", resultado)
+	util.RespostaSucesso(c, "Cliente encontrado", resultado)
 }
 
 // Listar lista todos os clientes do usuário
@@ -87,7 +87,7 @@ func (ctrl *ClienteControlador) Listar(c *gin.Context) {
 			util.RespostaErro(c, http.StatusInternalServerError, "Erro ao buscar clientes", err)
 			return
 		}
-		util.RespostaSucesso(c, http.StatusOK, "Clientes encontrados", resultado)
+		util.RespostaSucesso(c, "Clientes encontrados", resultado)
 		return
 	}
 
@@ -98,7 +98,7 @@ func (ctrl *ClienteControlador) Listar(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Clientes listados com sucesso", resultado)
+	util.RespostaSucesso(c, "Clientes listados com sucesso", resultado)
 }
 
 // Atualizar atualiza um cliente
@@ -128,7 +128,7 @@ func (ctrl *ClienteControlador) Atualizar(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Cliente atualizado com sucesso", resultado)
+	util.RespostaSucesso(c, "Cliente atualizado com sucesso", resultado)
 }
 
 // Deletar remove um cliente
@@ -152,5 +152,5 @@ func (ctrl *ClienteControlador) Deletar(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Cliente deletado com sucesso", nil)
+	util.RespostaSucesso(c, "Cliente deletado com sucesso", nil)
 }

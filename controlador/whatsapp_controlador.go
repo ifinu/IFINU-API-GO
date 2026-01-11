@@ -35,7 +35,7 @@ func (ctrl *WhatsAppControlador) Conectar(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "QR Code gerado com sucesso", resultado)
+	util.RespostaSucesso(c, "QR Code gerado com sucesso", resultado)
 }
 
 // ObterStatus retorna o status da conexão WhatsApp
@@ -53,7 +53,7 @@ func (ctrl *WhatsAppControlador) ObterStatus(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "Status obtido com sucesso", resultado)
+	util.RespostaSucesso(c, "Status obtido com sucesso", resultado)
 }
 
 // Desconectar desconecta o WhatsApp
@@ -71,7 +71,7 @@ func (ctrl *WhatsAppControlador) Desconectar(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, "WhatsApp desconectado com sucesso", nil)
+	util.RespostaSucesso(c, "WhatsApp desconectado com sucesso", nil)
 }
 
 // EnviarMensagem envia uma mensagem via WhatsApp
@@ -95,7 +95,7 @@ func (ctrl *WhatsAppControlador) EnviarMensagem(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, resultado.Mensagem, resultado)
+	util.RespostaSucesso(c, resultado.Mensagem, resultado)
 }
 
 // TestarConexao testa a conexão WhatsApp
@@ -113,5 +113,5 @@ func (ctrl *WhatsAppControlador) TestarConexao(c *gin.Context) {
 		return
 	}
 
-	util.RespostaSucesso(c, http.StatusOK, resultado.Mensagem, resultado)
+	util.RespostaSucesso(c, resultado.Mensagem, resultado)
 }
