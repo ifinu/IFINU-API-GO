@@ -1,0 +1,95 @@
+# ═══════════════════════════════════════════════════════════
+# COMANDOS PARA EXECUTAR NO SERVIDOR
+# ═══════════════════════════════════════════════════════════
+#
+# PASSO 1: Conecte no servidor
+# ssh mpx@192.168.0.100
+# Senha: Theo231023@
+#
+# PASSO 2: Copie e cole TODO este bloco de uma vez:
+# ═══════════════════════════════════════════════════════════
+
+# Parar Java e liberar porta
+echo "🛑 [1/8] Parando Java Spring Boot..."
+docker stop ifinu-api-java 2>/dev/null || true
+docker rm ifinu-api-java 2>/dev/null || true
+docker stop ifinu-api 2>/dev/null || true
+docker rm ifinu-api 2>/dev/null || true
+echo "⚔️  [2/8] Liberando porta 8080..."
+lsof -t -i:8080 | xargs kill -9 2>/dev/null || true
+echo "✅ Java parado e porta liberada"
+
+# Clonar/Atualizar repositório Go
+echo "📦 [3/8] Configurando repositório Go..."
+if [ ! -d "/home/mpx/ifinu-api-go" ]; then
+    cd /home/mpx
+    git clone https://github.com/ifinu/IFINU-API-GO.git ifinu-api-go
+    echo "✅ Repositório clonado"
+else
+    cd /home/mpx/ifinu-api-go
+    git fetch origin
+    git reset --hard origin/main
+    echo "✅ Repositório atualizado"
+fi
+cd /home/mpx/ifinu-api-go
+
+# Verificar/criar .env
+echo "🔧 [4/8] Verificando .env..."
+if [ ! -f ".env" ]; then
+    cp .env.example .env
+    echo "⚠️  .env criado - VOCÊ PRECISA CONFIGURÁ-LO!"
+    echo "Execute: nano .env"
+    echo "Pressione CTRL+X para continuar este script"
+else
+    echo "✅ .env já existe"
+fi
+
+# Build da imagem
+echo "🔨 [5/8] Buildando imagem Docker..."
+docker build -t ifinu-api-go:latest .
+echo "✅ Imagem buildada"
+
+# Limpar imagens antigas
+echo "🧹 [6/8] Limpando imagens antigas..."
+docker image prune -f
+echo "✅ Limpeza concluída"
+
+# Executar container
+echo "🚀 [7/8] Iniciando container..."
+docker run -d \
+  -p 8080:8080 \
+  --name ifinu-api \
+  --restart unless-stopped \
+  --env-file .env \
+  ifinu-api-go:latest
+echo "✅ Container iniciado"
+
+# Verificar
+echo "💚 [8/8] Verificando deploy..."
+sleep 5
+docker ps | grep ifinu-api
+echo ""
+echo "Health check:"
+curl -s http://localhost:8080/health | jq '.' || curl -s http://localhost:8080/health
+echo ""
+echo "Logs:"
+docker logs --tail 20 ifinu-api
+
+# Resumo
+echo ""
+echo "╔═══════════════════════════════════════════════════════════╗"
+echo "║              ✅ DEPLOY CONCLUÍDO COM SUCESSO              ║"
+echo "╚═══════════════════════════════════════════════════════════╝"
+echo ""
+echo "📊 Informações:"
+echo "  URL: http://192.168.0.100:8080"
+echo "  Health: http://192.168.0.100:8080/health"
+echo "  Container: ifinu-api"
+echo ""
+echo "📋 Comandos úteis:"
+echo "  Ver logs: docker logs -f ifinu-api"
+echo "  Parar: docker stop ifinu-api"
+echo "  Reiniciar: docker restart ifinu-api"
+echo ""
+echo "🎉 API IFINU GO está rodando!"
+echo "🗑️  Backend Java foi parado"
