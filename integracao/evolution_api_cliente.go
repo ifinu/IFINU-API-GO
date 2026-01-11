@@ -31,6 +31,7 @@ func NovoEvolutionAPICliente() *EvolutionAPICliente {
 // CriarInstanciaRequest representa a requisição para criar uma instância
 type CriarInstanciaRequest struct {
 	InstanceName string `json:"instanceName"`
+	Integration  string `json:"integration"`
 	Token        string `json:"token,omitempty"`
 	Qrcode       bool   `json:"qrcode"`
 }
@@ -86,6 +87,7 @@ func (c *EvolutionAPICliente) CriarInstancia(nomeInstancia string) (*CriarInstan
 
 	payload := CriarInstanciaRequest{
 		InstanceName: nomeInstancia,
+		Integration:  "WHATSAPP-BAILEYS",
 		Qrcode:       true,
 	}
 
