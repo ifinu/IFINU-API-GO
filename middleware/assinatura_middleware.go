@@ -37,6 +37,13 @@ func AssinaturaMiddleware() gin.HandlerFunc {
 			return
 		}
 
+		// Verificar se é vitalício (acesso ilimitado)
+		if usuario.Vitalicio {
+			c.Set("usuarioID", usuario.ID)
+			c.Next()
+			return
+		}
+
 		// Verificar se tem trial ativo e não expirado
 		if usuario.TrialAtivo && !usuario.IsTrialExpirado() {
 			c.Set("usuarioID", usuario.ID)
