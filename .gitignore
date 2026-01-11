@@ -1,0 +1,51 @@
+# Binários
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary
+*.test
+
+# Output do go build
+*.out
+
+# Dependências
+vendor/
+
+# Arquivos de ambiente
+.env
+.env.local
+.env.production
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Uploads
+uploads/*
+!uploads/.gitkeep
+
+# Temporários
+tmp/
+temp/
+
+# Go workspace
+go.work
+go.work.sum
+
+# Air (hot reload)
+tmp/
+.air.toml
