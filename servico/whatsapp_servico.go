@@ -41,7 +41,7 @@ func (s *WhatsAppServico) Conectar(usuarioID uuid.UUID) (*dto.ConectarWhatsAppRe
 
 	// Verificar se já existe uma conexão
 	conexaoExistente, err := s.whatsappRepo.BuscarPorUsuario(usuarioID)
-	if err == nil && conexaoExistente.Conectado {
+	if err == nil && conexaoExistente.IsConectado() {
 		return nil, errors.New("já existe uma conexão WhatsApp ativa")
 	}
 
@@ -57,18 +57,18 @@ func (s *WhatsAppServico) Conectar(usuarioID uuid.UUID) (*dto.ConectarWhatsAppRe
 	// Salvar ou atualizar conexão
 	if conexaoExistente != nil {
 		// Atualizar conexão existente
-		conexaoExistente.NomeInstancia = nomeInstancia
+		conexaoExistente.InstanceName = nomeInstancia
 		conexaoExistente.QRCode = resultado.Qrcode.Base64
-		conexaoExistente.Conectado = false
+		conexaoExistente.Status = entidades.StatusConexaoConectando
 		err = s.whatsappRepo.Atualizar(conexaoExistente)
 	} else {
 		// Criar nova conexão
 		conexao := &entidades.WhatsAppConexao{
-			UsuarioID:     usuarioID,
-			NomeInstancia: nomeInstancia,
-			QRCode:        resultado.Qrcode.Base64,
-			Conectado:     false,
-			DataCriacao:   time.Now(),
+			UsuarioID:    usuarioID,
+			InstanceName: nomeInstancia,
+			QRCode:       resultado.Qrcode.Base64,
+			Status:       entidades.StatusConexaoConectando,
+			DataCriacao:  time.Now(),
 		}
 		err = s.whatsappRepo.Criar(conexao)
 	}
@@ -97,30 +97,30 @@ func (s *WhatsAppServico) ObterStatus(usuarioID uuid.UUID) (*dto.StatusWhatsAppR
 	}
 
 	// Verificar status no Evolution API
-	status, err := s.evolutionAPI.ObterStatus(conexao.NomeInstancia)
+	status, err := s.evolutionAPI.ObterStatus(conexao.InstanceName)
 	if err != nil {
 		// Se der erro, retornar status da base de dados
 		return &dto.StatusWhatsAppResponse{
-			Conectado:     conexao.Conectado,
-			NomeInstancia: conexao.NomeInstancia,
+			Conectado:     conexao.IsConectado(),
+			NomeInstancia: conexao.InstanceName,
 			DataConexao:   conexao.DataConexao,
 		}, nil
 	}
 
 	// Atualizar status na base de dados se mudou
 	statusConectado := status.Instance.State == "open"
-	if statusConectado != conexao.Conectado {
-		conexao.Conectado = statusConectado
+	if statusConectado != conexao.IsConectado() {
 		if statusConectado {
-			agora := time.Now()
-			conexao.DataConexao = &agora
+			conexao.Conectar("")
+		} else {
+			conexao.Desconectar()
 		}
 		s.whatsappRepo.Atualizar(conexao)
 	}
 
 	return &dto.StatusWhatsAppResponse{
 		Conectado:     statusConectado,
-		NomeInstancia: conexao.NomeInstancia,
+		NomeInstancia: conexao.InstanceName,
 		QRCode:        conexao.QRCode,
 		DataConexao:   conexao.DataConexao,
 	}, nil
@@ -138,7 +138,7 @@ func (s *WhatsAppServico) Desconectar(usuarioID uuid.UUID) error {
 	}
 
 	// Desconectar no Evolution API
-	err = s.evolutionAPI.Desconectar(conexao.NomeInstancia)
+	err = s.evolutionAPI.Desconectar(conexao.InstanceName)
 	if err != nil {
 		return err
 	}
@@ -158,12 +158,12 @@ func (s *WhatsAppServico) EnviarMensagem(usuarioID uuid.UUID, telefone, mensagem
 		return nil, err
 	}
 
-	if !conexao.Conectado {
+	if !conexao.IsConectado() {
 		return nil, errors.New("WhatsApp não está conectado")
 	}
 
 	// Enviar mensagem via Evolution API
-	resultado, err := s.evolutionAPI.EnviarMensagemTexto(conexao.NomeInstancia, telefone, mensagem)
+	resultado, err := s.evolutionAPI.EnviarMensagemTexto(conexao.InstanceName, telefone, mensagem)
 	if err != nil {
 		return &dto.EnviarMensagemResponse{
 			Sucesso:  false,
@@ -194,7 +194,7 @@ func (s *WhatsAppServico) TestarConexao(usuarioID uuid.UUID) (*dto.TestarConexao
 	}
 
 	// Verificar status no Evolution API
-	status, err := s.evolutionAPI.ObterStatus(conexao.NomeInstancia)
+	status, err := s.evolutionAPI.ObterStatus(conexao.InstanceName)
 	if err != nil {
 		return &dto.TestarConexaoResponse{
 			Sucesso:  false,
