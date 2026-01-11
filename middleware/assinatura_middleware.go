@@ -47,7 +47,7 @@ func AssinaturaMiddleware() gin.HandlerFunc {
 		// Verificar se tem assinatura ativa
 		assinaturaRepo := repositorio.NovoAssinaturaRepositorio(config.DB)
 		assinatura, err := assinaturaRepo.BuscarPorUsuario(usuario.ID)
-		if err == nil && assinatura.Ativa && assinatura.IsAtiva() {
+		if err == nil && assinatura.IsAtiva() {
 			c.Set("usuarioID", usuario.ID)
 			c.Next()
 			return

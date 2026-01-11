@@ -130,7 +130,7 @@ func (s *AgendadorServico) EnviarNotificacoesVencimento() {
 func (s *AgendadorServico) enviarNotificacaoLembrete(cobranca *entidades.Cobranca) {
 	// Enviar WhatsApp
 	conexao, err := s.whatsappRepo.BuscarPorUsuario(cobranca.UsuarioID)
-	if err == nil && conexao.Conectado {
+	if err == nil && conexao.IsConectado() {
 		mensagem := fmt.Sprintf(
 			"🔔 *Lembrete de Cobrança*\n\n"+
 				"Olá, %s!\n\n"+
@@ -146,7 +146,7 @@ func (s *AgendadorServico) enviarNotificacaoLembrete(cobranca *entidades.Cobranc
 		)
 
 		_, err := s.evolutionAPI.EnviarMensagemTexto(
-			conexao.NomeInstancia,
+			conexao.InstanceName,
 			cobranca.Cliente.Telefone,
 			mensagem,
 		)
@@ -180,7 +180,7 @@ func (s *AgendadorServico) enviarNotificacaoLembrete(cobranca *entidades.Cobranc
 func (s *AgendadorServico) enviarNotificacaoVencimento(cobranca *entidades.Cobranca) {
 	// Enviar WhatsApp
 	conexao, err := s.whatsappRepo.BuscarPorUsuario(cobranca.UsuarioID)
-	if err == nil && conexao.Conectado {
+	if err == nil && conexao.IsConectado() {
 		mensagem := fmt.Sprintf(
 			"⚠️ *Cobrança Vence Hoje*\n\n"+
 				"Olá, %s!\n\n"+
@@ -194,7 +194,7 @@ func (s *AgendadorServico) enviarNotificacaoVencimento(cobranca *entidades.Cobra
 		)
 
 		_, err := s.evolutionAPI.EnviarMensagemTexto(
-			conexao.NomeInstancia,
+			conexao.InstanceName,
 			cobranca.Cliente.Telefone,
 			mensagem,
 		)
@@ -239,7 +239,7 @@ func (s *AgendadorServico) AtualizarCobrancasVencidas() {
 	log.Printf("🔄 Atualizando %d cobranças vencidas...", len(cobrancas))
 
 	for _, cobranca := range cobrancas {
-		cobranca.Status = enums.StatusCobrancaVencida
+		cobranca.Status = enums.StatusCobrancaVencido
 		err := s.cobrancaRepo.Atualizar(&cobranca)
 		if err != nil {
 			log.Printf("❌ Erro ao atualizar cobrança %d: %v", cobranca.ID, err)

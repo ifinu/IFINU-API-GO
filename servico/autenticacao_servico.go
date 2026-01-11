@@ -40,7 +40,7 @@ func (s *AutenticacaoServico) Login(req dto.LoginRequest) (*dto.LoginResponse, e
 	}
 
 	// Se 2FA está habilitado, retornar erro específico
-	if usuario.TwoFactorHabilitado {
+	if usuario.DuasEtapasAtivo {
 		return nil, errors.New("2FA_NECESSARIO")
 	}
 
@@ -55,9 +55,9 @@ func (s *AutenticacaoServico) Login(req dto.LoginRequest) (*dto.LoginResponse, e
 		return nil, err
 	}
 
-	// Atualizar último login
+	// Atualizar último acesso
 	agora := time.Now()
-	usuario.UltimoLogin = &agora
+	usuario.DataUltimoAcesso = &agora
 	s.usuarioRepo.Atualizar(usuario)
 
 	// Montar resposta
@@ -185,7 +185,7 @@ func (s *AutenticacaoServico) Gerar2FA(email string) (*dto.GerarQRCode2FARespons
 	}
 
 	// Salvar secret no usuário
-	usuario.TwoFactorSecret = key.Secret()
+	usuario.DuasEtapasSecret = key.Secret()
 	err = s.usuarioRepo.Atualizar(usuario)
 	if err != nil {
 		return nil, err
@@ -205,13 +205,13 @@ func (s *AutenticacaoServico) Ativar2FA(email string, codigo string) error {
 	}
 
 	// Validar código
-	valido := totp.Validate(codigo, usuario.TwoFactorSecret)
+	valido := totp.Validate(codigo, usuario.DuasEtapasSecret)
 	if !valido {
 		return errors.New("código inválido")
 	}
 
 	// Ativar 2FA
-	usuario.TwoFactorHabilitado = true
+	usuario.DuasEtapasAtivo = true
 	return s.usuarioRepo.Atualizar(usuario)
 }
 
@@ -223,7 +223,7 @@ func (s *AutenticacaoServico) Verificar2FA(req dto.Verificar2FARequest) (*dto.Lo
 	}
 
 	// Validar código
-	valido := totp.Validate(req.Codigo, usuario.TwoFactorSecret)
+	valido := totp.Validate(req.Codigo, usuario.DuasEtapasSecret)
 	if !valido {
 		return nil, errors.New("código inválido")
 	}
@@ -239,9 +239,9 @@ func (s *AutenticacaoServico) Verificar2FA(req dto.Verificar2FARequest) (*dto.Lo
 		return nil, err
 	}
 
-	// Atualizar último login
+	// Atualizar último acesso
 	agora := time.Now()
-	usuario.UltimoLogin = &agora
+	usuario.DataUltimoAcesso = &agora
 	s.usuarioRepo.Atualizar(usuario)
 
 	return &dto.LoginResponse{
@@ -266,6 +266,6 @@ func (s *AutenticacaoServico) mapearUsuarioParaDTO(usuario *entidades.Usuario) d
 		TrialExpirado:       usuario.IsTrialExpirado(),
 		AssinaturaAtiva:     false, // TODO: verificar assinatura ativa
 		DataCriacao:         usuario.DataCriacao,
-		TwoFactorHabilitado: usuario.TwoFactorHabilitado,
+		TwoFactorHabilitado: usuario.DuasEtapasAtivo,
 	}
 }
