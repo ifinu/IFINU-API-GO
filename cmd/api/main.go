@@ -54,6 +54,7 @@ func main() {
 	whatsappServico := servico.NovoWhatsAppServico(whatsappRepo, usuarioRepo, evolutionAPI)
 	assinaturaServico := servico.NovoAssinaturaServico(assinaturaRepo, usuarioRepo)
 	relatorioServico := servico.NovoRelatorioServico(clienteRepo, cobrancaRepo)
+	stripeServico := servico.NovoStripeServico(usuarioRepo)
 
 	// Inicializar e iniciar agendador
 	agendadorServico := servico.NovoAgendadorServico(cobrancaRepo, whatsappRepo, evolutionAPI, resendAPI)
@@ -66,6 +67,7 @@ func main() {
 	whatsappController := controlador.NovoWhatsAppControlador(whatsappServico)
 	assinaturaController := controlador.NovoAssinaturaControlador(assinaturaServico)
 	relatorioController := controlador.NovoRelatorioControlador(relatorioServico)
+	stripeController := controlador.NovoStripeControlador(stripeServico)
 
 	// Configurar Gin
 	if viper.GetString("APP_ENV") == "production" {
@@ -112,6 +114,28 @@ func main() {
 		}
 	}
 
+	// Rotas de WhatsApp SEM /api (compatibilidade com frontend)
+	whatsappLegacy := r.Group("/whatsapp")
+	whatsappLegacy.Use(middleware.AutenticacaoMiddleware())
+	whatsappLegacy.Use(middleware.AssinaturaMiddleware())
+	{
+		whatsappLegacy.POST("/conectar", whatsappController.Conectar)
+		whatsappLegacy.GET("/status", whatsappController.ObterStatus)
+		whatsappLegacy.GET("/qrcode", whatsappController.ObterQRCode)
+		whatsappLegacy.POST("/desconectar", whatsappController.Desconectar)
+		whatsappLegacy.POST("/enviar", whatsappController.EnviarMensagem)
+		whatsappLegacy.POST("/testar", whatsappController.TestarConexao)
+		whatsappLegacy.POST("/limpar-orfaos", whatsappController.LimparOrfaos)
+		whatsappLegacy.GET("/estatisticas", whatsappController.ObterEstatisticas)
+	}
+
+	// Rotas de Stripe SEM /api (compatibilidade com frontend)
+	stripeLegacy := r.Group("/stripe-trial")
+	stripeLegacy.Use(middleware.AutenticacaoMiddleware())
+	{
+		stripeLegacy.POST("/create-checkout", stripeController.CreateCheckout)
+	}
+
 	// Grupo de rotas API
 	api := r.Group("/api")
 	{
@@ -131,6 +155,14 @@ func main() {
 				authProtegido.POST("/2fa/gerar", autenticacaoController.Gerar2FA)
 				authProtegido.POST("/2fa/ativar", autenticacaoController.Ativar2FA)
 			}
+		}
+
+		// Rotas protegidas apenas com autenticação (sem verificar assinatura)
+		autenticado := api.Group("")
+		autenticado.Use(middleware.AutenticacaoMiddleware())
+		{
+			// Rota de perfil (sem exigir assinatura ativa)
+			autenticado.GET("/perfil", autenticacaoController.Me)
 		}
 
 		// Rotas protegidas (requerem autenticação e assinatura ativa)
@@ -169,6 +201,8 @@ func main() {
 				whatsapp.POST("/desconectar", whatsappController.Desconectar)
 				whatsapp.POST("/enviar", whatsappController.EnviarMensagem)
 				whatsapp.POST("/testar", whatsappController.TestarConexao)
+				whatsapp.POST("/limpar-orfaos", whatsappController.LimparOrfaos)
+				whatsapp.GET("/estatisticas", whatsappController.ObterEstatisticas)
 			}
 
 			// Rotas de assinaturas

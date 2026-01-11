@@ -133,3 +133,39 @@ func (ctrl *WhatsAppControlador) ObterQRCode(c *gin.Context) {
 
 	util.RespostaSucesso(c, "QR Code obtido com sucesso", qrcode)
 }
+
+// LimparOrfaos remove conexões WhatsApp órfãs
+// POST /api/whatsapp/limpar-orfaos
+func (ctrl *WhatsAppControlador) LimparOrfaos(c *gin.Context) {
+	usuarioID, exists := middleware.ObterUsuarioID(c)
+	if !exists {
+		util.RespostaErro(c, http.StatusUnauthorized, "Usuário não autenticado", nil)
+		return
+	}
+
+	resultado, err := ctrl.whatsappServico.LimparOrfaos(usuarioID)
+	if err != nil {
+		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao limpar órfãos", err)
+		return
+	}
+
+	util.RespostaSucesso(c, "Operação concluída", resultado)
+}
+
+// ObterEstatisticas retorna estatísticas do WhatsApp
+// GET /api/whatsapp/estatisticas
+func (ctrl *WhatsAppControlador) ObterEstatisticas(c *gin.Context) {
+	usuarioID, exists := middleware.ObterUsuarioID(c)
+	if !exists {
+		util.RespostaErro(c, http.StatusUnauthorized, "Usuário não autenticado", nil)
+		return
+	}
+
+	estatisticas, err := ctrl.whatsappServico.ObterEstatisticas(usuarioID)
+	if err != nil {
+		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao obter estatísticas", err)
+		return
+	}
+
+	util.RespostaSucesso(c, "Estatísticas obtidas com sucesso", estatisticas)
+}

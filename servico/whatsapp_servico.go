@@ -249,3 +249,75 @@ func (s *WhatsAppServico) ObterQRCode(usuarioID uuid.UUID) (map[string]interface
 
 	return nil, errors.New("QR Code não disponível")
 }
+
+// LimparOrfaos remove conexões WhatsApp órfãs (sem instância válida na Evolution API)
+func (s *WhatsAppServico) LimparOrfaos(usuarioID uuid.UUID) (map[string]interface{}, error) {
+	// Buscar conexão do usuário
+	conexao, err := s.whatsappRepo.BuscarPorUsuario(usuarioID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return map[string]interface{}{
+				"mensagem": "Nenhuma conexão encontrada",
+				"removido": false,
+			}, nil
+		}
+		return nil, err
+	}
+
+	// Verificar se a instância existe na Evolution API
+	_, err = s.evolutionAPI.ObterStatus(conexao.InstanceName)
+	if err != nil {
+		// Se der erro ao buscar status, a instância provavelmente não existe mais
+		// Remover conexão órfã
+		err = s.whatsappRepo.Deletar(usuarioID)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao remover conexão órfã: %w", err)
+		}
+
+		return map[string]interface{}{
+			"mensagem": "Conexão órfã removida com sucesso",
+			"removido": true,
+		}, nil
+	}
+
+	return map[string]interface{}{
+		"mensagem": "Conexão válida, nada a remover",
+		"removido": false,
+	}, nil
+}
+
+// ObterEstatisticas retorna estatísticas sobre o WhatsApp
+func (s *WhatsAppServico) ObterEstatisticas(usuarioID uuid.UUID) (map[string]interface{}, error) {
+	// Buscar conexão do usuário
+	conexao, err := s.whatsappRepo.BuscarPorUsuario(usuarioID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return map[string]interface{}{
+				"conectado":      false,
+				"totalConexoes":  0,
+				"ultimaConexao":  nil,
+			}, nil
+		}
+		return nil, err
+	}
+
+	estatisticas := map[string]interface{}{
+		"conectado":      conexao.IsConectado(),
+		"nomeInstancia":  conexao.InstanceName,
+		"status":         conexao.Status,
+		"dataCriacao":    conexao.DataCriacao,
+		"dataConexao":    conexao.DataConexao,
+		"dataAtualizacao": conexao.DataAtualizacao,
+	}
+
+	// Se conectado, buscar informações adicionais da Evolution API
+	if conexao.IsConectado() {
+		status, err := s.evolutionAPI.ObterStatus(conexao.InstanceName)
+		if err == nil {
+			estatisticas["numeroWhatsApp"] = status.Instance.Owner
+			estatisticas["profileName"] = status.Instance.ProfileName
+		}
+	}
+
+	return estatisticas, nil
+}
