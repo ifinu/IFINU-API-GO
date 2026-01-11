@@ -37,9 +37,8 @@ func (s *AssinaturaServico) ObterStatus(email string) (map[string]interface{}, e
 	// Se encontrou assinatura, adicionar informações
 	if err == nil && assinatura != nil {
 		status["assinaturaAtiva"] = assinatura.IsAtiva()
-		status["plano"] = assinatura.Plano
 		status["status"] = assinatura.Status
-		status["dataProximoPagamento"] = assinatura.DataProximoPagamento
+		status["dataProximaCobranca"] = assinatura.DataProximaCobranca
 		status["valorMensal"] = assinatura.ValorMensal
 	}
 

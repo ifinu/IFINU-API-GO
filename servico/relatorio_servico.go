@@ -20,13 +20,13 @@ func NovoRelatorioServico(clienteRepo *repositorio.ClienteRepositorio, cobrancaR
 // ObterDashboard retorna estatísticas do dashboard
 func (s *RelatorioServico) ObterDashboard(usuarioID uuid.UUID) (map[string]interface{}, error) {
 	// Buscar todas as cobranças do usuário
-	cobrancas, err := s.cobrancaRepo.BuscarPorUsuario(usuarioID, 0, 10000)
+	cobrancas, err := s.cobrancaRepo.BuscarPorUsuario(usuarioID)
 	if err != nil {
 		return nil, err
 	}
 
 	// Buscar todos os clientes
-	clientes, err := s.clienteRepo.BuscarPorUsuario(usuarioID, 0, 10000)
+	clientes, err := s.clienteRepo.BuscarPorUsuario(usuarioID)
 	if err != nil {
 		return nil, err
 	}
