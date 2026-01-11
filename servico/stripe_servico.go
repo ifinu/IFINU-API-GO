@@ -20,8 +20,8 @@ func NovoStripeServico(usuarioRepo *repositorio.UsuarioRepositorio) *StripeServi
 
 // CriarCheckoutTrial cria uma sessão de checkout Stripe para trial
 func (s *StripeServico) CriarCheckoutTrial(usuarioID uuid.UUID) (*dto.CreateCheckoutResponse, error) {
-	// Buscar usuário
-	usuario, err := s.usuarioRepo.BuscarPorID(usuarioID)
+	// Verificar se usuário existe
+	_, err := s.usuarioRepo.BuscarPorID(usuarioID)
 	if err != nil {
 		return nil, err
 	}

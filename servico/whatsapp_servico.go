@@ -302,11 +302,11 @@ func (s *WhatsAppServico) ObterEstatisticas(usuarioID uuid.UUID) (map[string]int
 	}
 
 	estatisticas := map[string]interface{}{
-		"conectado":      conexao.IsConectado(),
-		"nomeInstancia":  conexao.InstanceName,
-		"status":         conexao.Status,
-		"dataCriacao":    conexao.DataCriacao,
-		"dataConexao":    conexao.DataConexao,
+		"conectado":       conexao.IsConectado(),
+		"nomeInstancia":   conexao.InstanceName,
+		"status":          conexao.Status,
+		"dataCriacao":     conexao.DataCriacao,
+		"dataConexao":     conexao.DataConexao,
 		"dataAtualizacao": conexao.DataAtualizacao,
 	}
 
@@ -314,8 +314,8 @@ func (s *WhatsAppServico) ObterEstatisticas(usuarioID uuid.UUID) (map[string]int
 	if conexao.IsConectado() {
 		status, err := s.evolutionAPI.ObterStatus(conexao.InstanceName)
 		if err == nil {
-			estatisticas["numeroWhatsApp"] = status.Instance.Owner
-			estatisticas["profileName"] = status.Instance.ProfileName
+			estatisticas["instanceName"] = status.Instance.InstanceName
+			estatisticas["state"] = status.Instance.State
 		}
 	}
 
