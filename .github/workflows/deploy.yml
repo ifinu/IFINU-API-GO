@@ -40,6 +40,8 @@ jobs:
 
             # Parar containers antigos (Java e Go)
             echo "🛑 Parando containers antigos..."
+            docker stop ifinu-api-go 2>/dev/null || true
+            docker rm ifinu-api-go 2>/dev/null || true
             docker stop ifinu-api 2>/dev/null || true
             docker rm ifinu-api 2>/dev/null || true
             docker stop ifinu-api-java 2>/dev/null || true
@@ -61,7 +63,8 @@ jobs:
             echo "🚀 Iniciando novo container..."
             docker run -d \
               -p 8080:8080 \
-              --name ifinu-api \
+              --name ifinu-api-go \
+              --network ifinu-network \
               --restart unless-stopped \
               --env-file /home/mpx/ifinu-api-go/.env \
               ifinu-api-go:latest
@@ -72,7 +75,7 @@ jobs:
 
             # Verificar se está rodando
             echo "🔍 Verificando status..."
-            docker ps | grep ifinu-api
+            docker ps | grep ifinu-api-go
 
             # Health check
             echo "💚 Testando health check..."
@@ -80,7 +83,7 @@ jobs:
 
             # Mostrar logs
             echo "📋 Últimos logs:"
-            docker logs --tail 20 ifinu-api
+            docker logs --tail 20 ifinu-api-go
 
             echo "✅ Deploy concluído com sucesso!"
 
