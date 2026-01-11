@@ -115,3 +115,21 @@ func (ctrl *WhatsAppControlador) TestarConexao(c *gin.Context) {
 
 	util.RespostaSucesso(c, resultado.Mensagem, resultado)
 }
+
+// ObterQRCode retorna o QR Code para conexão
+// GET /api/whatsapp/qrcode
+func (ctrl *WhatsAppControlador) ObterQRCode(c *gin.Context) {
+	usuarioID, exists := middleware.ObterUsuarioID(c)
+	if !exists {
+		util.RespostaErro(c, http.StatusUnauthorized, "Usuário não autenticado", nil)
+		return
+	}
+
+	qrcode, err := ctrl.whatsappServico.ObterQRCode(usuarioID)
+	if err != nil {
+		util.RespostaErro(c, http.StatusNotFound, err.Error(), nil)
+		return
+	}
+
+	util.RespostaSucesso(c, "QR Code obtido com sucesso", qrcode)
+}

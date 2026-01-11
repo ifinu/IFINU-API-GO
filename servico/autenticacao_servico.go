@@ -255,6 +255,22 @@ func (s *AutenticacaoServico) Verificar2FA(req dto.Verificar2FARequest) (*dto.Lo
 	}, nil
 }
 
+// ObterStatusTrial retorna o status do trial do usuário
+func (s *AutenticacaoServico) ObterStatusTrial(email string) (map[string]interface{}, error) {
+	usuario, err := s.usuarioRepo.BuscarPorEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"trialAtivo":      usuario.TrialAtivo,
+		"trialExpirado":   usuario.IsTrialExpirado(),
+		"diasRestantes":   usuario.DiasRestantesTrial(),
+		"dataTrialInicio": usuario.DataTrialInicio,
+		"vitalicio":       usuario.Vitalicio,
+	}, nil
+}
+
 // mapearUsuarioParaDTO converte Usuario para UsuarioResponse
 func (s *AutenticacaoServico) mapearUsuarioParaDTO(usuario *entidades.Usuario) dto.UsuarioResponse {
 	return dto.UsuarioResponse{

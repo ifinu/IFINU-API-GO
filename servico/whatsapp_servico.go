@@ -217,3 +217,35 @@ func (s *WhatsAppServico) TestarConexao(usuarioID uuid.UUID) (*dto.TestarConexao
 		Status:   status.Instance.State,
 	}, nil
 }
+
+// ObterQRCode retorna o QR code da conexão WhatsApp
+func (s *WhatsAppServico) ObterQRCode(usuarioID uuid.UUID) (map[string]interface{}, error) {
+	// Buscar conexão
+	conexao, err := s.whatsappRepo.BuscarPorUsuario(usuarioID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("nenhuma conexão WhatsApp encontrada")
+		}
+		return nil, err
+	}
+
+	// Se não está conectado e tem QR code, retornar
+	if !conexao.IsConectado() && conexao.QRCode != "" {
+		return map[string]interface{}{
+			"qrcode":        conexao.QRCode,
+			"nomeInstancia": conexao.InstanceName,
+			"status":        conexao.Status,
+		}, nil
+	}
+
+	// Se já está conectado
+	if conexao.IsConectado() {
+		return map[string]interface{}{
+			"conectado":     true,
+			"nomeInstancia": conexao.InstanceName,
+			"dataConexao":   conexao.DataConexao,
+		}, nil
+	}
+
+	return nil, errors.New("QR Code não disponível")
+}

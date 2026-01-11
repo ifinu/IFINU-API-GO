@@ -155,3 +155,21 @@ func (ctrl *AutenticacaoControlador) Verificar2FA(c *gin.Context) {
 
 	util.RespostaSucesso(c, "Login com 2FA realizado com sucesso", resultado)
 }
+
+// StatusTrial retorna o status do trial do usuário autenticado
+// GET /auth/status-trial
+func (ctrl *AutenticacaoControlador) StatusTrial(c *gin.Context) {
+	email, exists := middleware.ObterEmailUsuario(c)
+	if !exists {
+		util.RespostaErro(c, http.StatusUnauthorized, "Usuário não autenticado", nil)
+		return
+	}
+
+	status, err := ctrl.autenticacaoServico.ObterStatusTrial(email)
+	if err != nil {
+		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao obter status do trial", err)
+		return
+	}
+
+	util.RespostaSucesso(c, "Status do trial obtido com sucesso", status)
+}

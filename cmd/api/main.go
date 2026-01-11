@@ -39,6 +39,7 @@ func main() {
 	clienteRepo := repositorio.NovoClienteRepositorio(config.DB)
 	cobrancaRepo := repositorio.NovoCobrancaRepositorio(config.DB)
 	whatsappRepo := repositorio.NovoWhatsAppRepositorio(config.DB)
+	assinaturaRepo := repositorio.NovoAssinaturaRepositorio(config.DB)
 
 	// Inicializar integrações
 	evolutionAPI := integracao.NovoEvolutionAPICliente()
@@ -51,6 +52,8 @@ func main() {
 	clienteServico := servico.NovoClienteServico(clienteRepo)
 	cobrancaServico := servico.NovoCobrancaServico(cobrancaRepo, clienteRepo)
 	whatsappServico := servico.NovoWhatsAppServico(whatsappRepo, usuarioRepo, evolutionAPI)
+	assinaturaServico := servico.NovoAssinaturaServico(assinaturaRepo, usuarioRepo)
+	relatorioServico := servico.NovoRelatorioServico(clienteRepo, cobrancaRepo)
 
 	// Inicializar e iniciar agendador
 	agendadorServico := servico.NovoAgendadorServico(cobrancaRepo, whatsappRepo, evolutionAPI, resendAPI)
@@ -61,6 +64,8 @@ func main() {
 	clienteController := controlador.NovoClienteControlador(clienteServico)
 	cobrancaController := controlador.NovoCobrancaControlador(cobrancaServico)
 	whatsappController := controlador.NovoWhatsAppControlador(whatsappServico)
+	assinaturaController := controlador.NovoAssinaturaControlador(assinaturaServico)
+	relatorioController := controlador.NovoRelatorioControlador(relatorioServico)
 
 	// Configurar Gin
 	if viper.GetString("APP_ENV") == "production" {
@@ -101,6 +106,7 @@ func main() {
 		authLegacyProtegido.Use(middleware.AutenticacaoMiddleware())
 		{
 			authLegacyProtegido.GET("/me", autenticacaoController.Me)
+			authLegacyProtegido.GET("/status-trial", autenticacaoController.StatusTrial)
 			authLegacyProtegido.POST("/2fa/gerar", autenticacaoController.Gerar2FA)
 			authLegacyProtegido.POST("/2fa/ativar", autenticacaoController.Ativar2FA)
 		}
@@ -159,9 +165,22 @@ func main() {
 			{
 				whatsapp.POST("/conectar", whatsappController.Conectar)
 				whatsapp.GET("/status", whatsappController.ObterStatus)
+				whatsapp.GET("/qrcode", whatsappController.ObterQRCode)
 				whatsapp.POST("/desconectar", whatsappController.Desconectar)
 				whatsapp.POST("/enviar", whatsappController.EnviarMensagem)
 				whatsapp.POST("/testar", whatsappController.TestarConexao)
+			}
+
+			// Rotas de assinaturas
+			assinaturas := protegido.Group("/assinaturas")
+			{
+				assinaturas.GET("/status", assinaturaController.Status)
+			}
+
+			// Rotas de relatórios
+			relatorios := protegido.Group("/relatorios")
+			{
+				relatorios.GET("/dashboard", relatorioController.Dashboard)
 			}
 		}
 	}
