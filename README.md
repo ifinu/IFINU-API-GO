@@ -309,3 +309,4 @@ Proprietário - IFINU © 2024-2026
 **Status**: 🟡 Em desenvolvimento ativo
 
 **Última atualização**: Janeiro 2026
+# Deploy Automático Ativo
