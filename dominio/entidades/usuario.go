@@ -22,8 +22,8 @@ type Usuario struct {
 	StripeAccountID        string     `gorm:"type:varchar(255)" json:"stripeAccountId"`
 	DuasEtapasAtivo        bool       `gorm:"default:false" json:"duasEtapasAtivo"`
 	DuasEtapasSecret       string     `gorm:"type:varchar(255)" json:"-"`
-	CodigosRecuperacao2FA  string     `gorm:"type:text" json:"-"`
-	DataAtivacao2FA        *time.Time `gorm:"type:timestamp" json:"dataAtivacao2FA"`
+	CodigosRecuperacao2FA  string     `gorm:"column:codigos_recuperacao_2fa;type:text" json:"-"`
+	DataAtivacao2FA        *time.Time `gorm:"column:data_ativacao_2fa;type:timestamp" json:"dataAtivacao2FA"`
 	DataTrialInicio        *time.Time `gorm:"type:timestamp" json:"dataTrialInicio"`
 	TrialAtivo             bool       `gorm:"default:true" json:"trialAtivo"`
 	DataCriacao            time.Time  `gorm:"autoCreateTime" json:"dataCriacao"`
