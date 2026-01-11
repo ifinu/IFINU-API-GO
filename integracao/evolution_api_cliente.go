@@ -40,11 +40,11 @@ type CriarInstanciaRequest struct {
 type CriarInstanciaResponse struct {
 	Instance struct {
 		InstanceName string `json:"instanceName"`
+		InstanceId   string `json:"instanceId"`
+		Integration  string `json:"integration"`
 		Status       string `json:"status"`
 	} `json:"instance"`
-	Hash struct {
-		ApiKey string `json:"apikey"`
-	} `json:"hash"`
+	Hash   string `json:"hash"`
 	Qrcode struct {
 		Code   string `json:"code"`
 		Base64 string `json:"base64"`
