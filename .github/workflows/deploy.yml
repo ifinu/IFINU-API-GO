@@ -9,37 +9,44 @@ on:
 jobs:
   deploy:
     name: Deploy para Produção
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
       - name: Checkout código
         uses: actions/checkout@v3
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          password: ${{ secrets.SSH_PASSWORD }}
-          port: 22
-          command_timeout: 30m
-          script: |
-            cd /home/mpx/ifinu-api-go
-            git pull origin main
-            docker stop ifinu-api-go || true
-            docker rm ifinu-api-go || true
-            docker build -t ifinu-api-go:latest .
-            docker run -d -p 8080:8080 --name ifinu-api-go --network ifinu-network --restart unless-stopped --env-file .env ifinu-api-go:latest
-            sleep 5
-            curl -f http://localhost:8080/health
-
-      - name: Verificar deploy
-        if: success()
+      - name: Build Docker image
         run: |
-          echo "✅ Deploy realizado com sucesso!"
-          echo "🔗 API: http://api.ifinu.io"
+          echo "🔨 Building Docker image..."
+          docker build -t ifinu-api-go:latest .
 
-      - name: Deploy falhou
-        if: failure()
+      - name: Stop old container
         run: |
-          echo "❌ Deploy falhou!"
+          echo "🛑 Stopping old container..."
+          docker stop ifinu-api-go || true
+          docker rm ifinu-api-go || true
+
+      - name: Start new container
+        run: |
+          echo "🚀 Starting new container..."
+          docker run -d \
+            -p 8080:8080 \
+            --name ifinu-api-go \
+            --network ifinu-network \
+            --restart unless-stopped \
+            --env-file /home/mpx/ifinu-api-go/.env \
+            ifinu-api-go:latest
+
+      - name: Health check
+        run: |
+          echo "💚 Testing health check..."
+          sleep 5
+          curl -f http://localhost:8080/health
+          echo ""
+          echo "✅ Deploy successful!"
+
+      - name: Show status
+        if: always()
+        run: |
+          docker ps | grep ifinu-api-go || true
+          docker logs --tail 10 ifinu-api-go || true
