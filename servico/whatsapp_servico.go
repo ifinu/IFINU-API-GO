@@ -10,6 +10,7 @@ import (
 	"github.com/ifinu/ifinu-api-go/dto"
 	"github.com/ifinu/ifinu-api-go/integracao"
 	"github.com/ifinu/ifinu-api-go/repositorio"
+	"github.com/ifinu/ifinu-api-go/util"
 	"gorm.io/gorm"
 )
 
@@ -162,8 +163,11 @@ func (s *WhatsAppServico) EnviarMensagem(usuarioID uuid.UUID, telefone, mensagem
 		return nil, errors.New("WhatsApp não está conectado")
 	}
 
+	// Formatar telefone brasileiro (adicionar código do país 55 se necessário)
+	telefoneFormatado := util.FormatarTelefoneBrasileiro(telefone)
+
 	// Enviar mensagem via Evolution API
-	resultado, err := s.evolutionAPI.EnviarMensagemTexto(conexao.InstanceName, telefone, mensagem)
+	resultado, err := s.evolutionAPI.EnviarMensagemTexto(conexao.InstanceName, telefoneFormatado, mensagem)
 	if err != nil {
 		// Incrementar contador de falhas
 		conexao.MensagensEnviadas++
