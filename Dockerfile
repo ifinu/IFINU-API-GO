@@ -10,12 +10,14 @@ WORKDIR /app
 # Instalar dependências de build
 RUN apk add --no-cache git ca-certificates tzdata
 
-# Copiar módulos Go e baixar dependências
+# Copiar módulos Go primeiro
 COPY go.mod go.sum ./
-RUN go mod download && go mod verify
 
 # Copiar código fonte
 COPY . .
+
+# Atualizar dependências baseado no código
+RUN go mod tidy && go mod download && go mod verify
 
 # Build do binário otimizado
 # CGO_ENABLED=0 para binário estático
