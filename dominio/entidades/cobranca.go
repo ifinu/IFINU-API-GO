@@ -26,6 +26,7 @@ type Cobranca struct {
 	NotificacaoLembreteEnviada     bool                       `gorm:"default:false" json:"notificacaoLembreteEnviada"`
 	NotificacaoVencimentoEnviada   bool                       `gorm:"default:false" json:"notificacaoVencimentoEnviada"`
 	ConfirmacaoPagamentoEnviada    bool                       `gorm:"default:false" json:"confirmacaoPagamentoEnviada"`
+	TentativasNotificacao          int                        `gorm:"type:integer;not null;default:0" json:"tentativasNotificacao"`
 	AsaasPaymentID                 string                     `gorm:"type:varchar(255)" json:"asaasPaymentId"`
 	AsaasStatus                    string                     `gorm:"type:varchar(50)" json:"asaasStatus"`
 	AsaasPaymentURL                string                     `gorm:"type:text" json:"asaasPaymentUrl"`
