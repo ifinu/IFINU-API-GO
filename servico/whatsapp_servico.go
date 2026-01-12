@@ -174,17 +174,29 @@ func (s *WhatsAppServico) EnviarMensagem(usuarioID uuid.UUID, telefone, mensagem
 
 	// Enviar mensagem de forma assíncrona para evitar timeout
 	go func() {
+		fmt.Printf("📤 [ASYNC] Iniciando envio para %s (instância: %s)\n", telefoneFormatado, conexao.InstanceName)
+
 		resultado, err := s.evolutionAPI.EnviarMensagemTexto(conexao.InstanceName, telefoneFormatado, mensagem)
+
+		if err != nil {
+			fmt.Printf("❌ [ASYNC] Erro ao enviar: %v\n", err)
+		} else {
+			fmt.Printf("✅ [ASYNC] Mensagem enviada com sucesso! MessageID: %s\n", resultado.Key.ID)
+		}
 
 		// Atualizar estatísticas após envio
 		conexaoAtual, errBusca := s.whatsappRepo.BuscarPorUsuario(usuarioID)
 		if errBusca == nil {
 			if err != nil {
 				conexaoAtual.MensagensFalha++
+				fmt.Printf("📊 [ASYNC] Falhas: %d\n", conexaoAtual.MensagensFalha)
 			} else if resultado != nil {
 				conexaoAtual.MensagensSucesso++
+				fmt.Printf("📊 [ASYNC] Sucessos: %d\n", conexaoAtual.MensagensSucesso)
 			}
 			s.whatsappRepo.Atualizar(conexaoAtual)
+		} else {
+			fmt.Printf("⚠️  [ASYNC] Erro ao atualizar estatísticas: %v\n", errBusca)
 		}
 	}()
 
