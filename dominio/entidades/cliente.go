@@ -19,6 +19,7 @@ type Cliente struct {
 	Estado          string    `gorm:"type:varchar(2)" json:"estado"`
 	CEP             string    `gorm:"type:varchar(10)" json:"cep"`
 	Observacoes     string    `gorm:"type:text" json:"observacoes"`
+	Ativo           bool      `gorm:"type:boolean;not null;default:true" json:"ativo"`
 	DataCriacao     time.Time `gorm:"autoCreateTime" json:"dataCriacao"`
 	DataAtualizacao time.Time `gorm:"autoUpdateTime" json:"dataAtualizacao"`
 
