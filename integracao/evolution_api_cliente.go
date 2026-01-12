@@ -23,7 +23,7 @@ func NovoEvolutionAPICliente() *EvolutionAPICliente {
 		baseURL: viper.GetString("EVOLUTION_API_URL"),
 		apiKey:  viper.GetString("EVOLUTION_API_KEY"),
 		client: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 120 * time.Second, // Aumentado para 120s devido a lentidão da Evolution API
 		},
 	}
 }
