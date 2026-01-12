@@ -4,12 +4,12 @@ import "time"
 
 // ClienteRequest representa a requisição de criação/atualização de cliente
 type ClienteRequest struct {
-	Nome     string `json:"nome" binding:"required,min=2"`
-	Email    string `json:"email" binding:"required,email"`
-	Telefone string `json:"telefone" binding:"required"`
-	Endereco string `json:"endereco"`
-	CPF      string `json:"cpf"`
-	CNPJ     string `json:"cnpj"`
+	Nome     string  `json:"nome" binding:"required,min=2"`
+	Email    string  `json:"email" binding:"required,email"`
+	Telefone string  `json:"telefone" binding:"required"`
+	Endereco string  `json:"endereco"`
+	CPF      *string `json:"cpf"`
+	CNPJ     *string `json:"cnpj"`
 }
 
 // ClienteResponse representa o cliente na resposta
@@ -19,8 +19,8 @@ type ClienteResponse struct {
 	Email       string    `json:"email"`
 	Telefone    string    `json:"telefone"`
 	Endereco    string    `json:"endereco,omitempty"`
-	CPF         string    `json:"cpf,omitempty"`
-	CNPJ        string    `json:"cnpj,omitempty"`
+	CPF         *string   `json:"cpf,omitempty"`
+	CNPJ        *string   `json:"cnpj,omitempty"`
 	DataCriacao time.Time `json:"dataCriacao"`
 }
 
