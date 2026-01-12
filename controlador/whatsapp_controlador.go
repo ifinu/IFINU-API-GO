@@ -98,7 +98,7 @@ func (ctrl *WhatsAppControlador) EnviarMensagem(c *gin.Context) {
 	util.RespostaSucesso(c, resultado.Mensagem, resultado)
 }
 
-// TestarConexao testa a conexão WhatsApp
+// TestarConexao testa a conexão WhatsApp enviando uma mensagem
 // POST /api/whatsapp/testar
 func (ctrl *WhatsAppControlador) TestarConexao(c *gin.Context) {
 	usuarioID, exists := middleware.ObterUsuarioID(c)
@@ -107,9 +107,15 @@ func (ctrl *WhatsAppControlador) TestarConexao(c *gin.Context) {
 		return
 	}
 
-	resultado, err := ctrl.whatsappServico.TestarConexao(usuarioID)
+	var req dto.EnviarMensagemRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		util.RespostaErro(c, http.StatusBadRequest, "Dados inválidos", err)
+		return
+	}
+
+	resultado, err := ctrl.whatsappServico.EnviarMensagem(usuarioID, req.Telefone, req.Mensagem)
 	if err != nil {
-		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao testar conexão", err)
+		util.RespostaErro(c, http.StatusBadRequest, err.Error(), nil)
 		return
 	}
 

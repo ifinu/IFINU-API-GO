@@ -165,11 +165,23 @@ func (s *WhatsAppServico) EnviarMensagem(usuarioID uuid.UUID, telefone, mensagem
 	// Enviar mensagem via Evolution API
 	resultado, err := s.evolutionAPI.EnviarMensagemTexto(conexao.InstanceName, telefone, mensagem)
 	if err != nil {
+		// Incrementar contador de falhas
+		conexao.MensagensEnviadas++
+		conexao.MensagensFalha++
+		s.whatsappRepo.Atualizar(conexao)
+
 		return &dto.EnviarMensagemResponse{
 			Sucesso:  false,
 			Mensagem: fmt.Sprintf("Erro ao enviar mensagem: %v", err),
 		}, nil
 	}
+
+	// Incrementar contadores de sucesso
+	conexao.MensagensEnviadas++
+	conexao.MensagensSucesso++
+	now := time.Now()
+	conexao.DataUltimaAtividade = &now
+	s.whatsappRepo.Atualizar(conexao)
 
 	return &dto.EnviarMensagemResponse{
 		Sucesso:   true,
