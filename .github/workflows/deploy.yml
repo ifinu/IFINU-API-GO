@@ -23,8 +23,10 @@ jobs:
       - name: Stop old container
         run: |
           echo "🛑 Stopping old container..."
-          docker stop ifinu-api-go || true
-          docker rm ifinu-api-go || true
+          docker stop ifinu-api-go 2>/dev/null || true
+          docker rm ifinu-api-go 2>/dev/null || true
+          docker rm -f ifinu-api-go 2>/dev/null || true
+          sleep 2
 
       - name: Start new container
         run: |
