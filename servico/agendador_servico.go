@@ -21,6 +21,7 @@ type AgendadorServico struct {
 	resendAPI        *integracao.ResendCliente
 	cron             *cron.Cron
 	horarioComercial *util.HorarioComercial
+	filaMensagem     *FilaMensagemServico
 }
 
 func NovoAgendadorServico(
@@ -28,7 +29,17 @@ func NovoAgendadorServico(
 	whatsappRepo *repositorio.WhatsAppRepositorio,
 	evolutionAPI *integracao.EvolutionAPICliente,
 	resendAPI *integracao.ResendCliente,
+	whatsappServico *WhatsAppServico,
+	redisAddr string,
 ) *AgendadorServico {
+	// Inicializar fila de mensagens
+	filaMensagem := NovoFilaMensagemServico(redisAddr, whatsappServico, resendAPI)
+
+	// Iniciar worker pool (10 workers processando em paralelo)
+	if filaMensagem != nil {
+		filaMensagem.IniciarWorkerPool(10)
+	}
+
 	return &AgendadorServico{
 		cobrancaRepo:     cobrancaRepo,
 		whatsappRepo:     whatsappRepo,
@@ -36,6 +47,7 @@ func NovoAgendadorServico(
 		resendAPI:        resendAPI,
 		cron:             cron.New(),
 		horarioComercial: util.HorarioComercialPadrao(),
+		filaMensagem:     filaMensagem,
 	}
 }
 
@@ -104,20 +116,40 @@ func (s *AgendadorServico) EnviarNotificacoesLembrete() {
 		return
 	}
 
-	log.Printf("📬 Enviando %d notificações de lembrete (horário comercial)...", len(cobrancas))
+	log.Printf("📬 Enfileirando %d notificações de lembrete...", len(cobrancas))
 
-	// Usar goroutines para enviar notificações em paralelo
-	var wg sync.WaitGroup
+	// Enfileirar todas as mensagens para processamento assíncrono
+	enfileiradas := 0
 	for _, cobranca := range cobrancas {
-		wg.Add(1)
-		go func(c *entidades.Cobranca) {
-			defer wg.Done()
-			s.enviarNotificacaoLembrete(c)
-		}(&cobranca)
+		// Se fila não disponível, enviar direto (fallback)
+		if s.filaMensagem == nil {
+			s.enviarNotificacaoLembrete(&cobranca)
+			continue
+		}
+
+		// Enfileirar mensagem
+		msg := &MensagemFila{
+			ID:              fmt.Sprintf("lembrete_%d_%d", cobranca.ID, time.Now().Unix()),
+			TipoNotificacao: "lembrete",
+			Cobranca:        &cobranca,
+			Tentativas:      0,
+		}
+
+		if err := s.filaMensagem.EnfileirarMensagem(msg); err != nil {
+			log.Printf("❌ Erro ao enfileirar: %v. Enviando direto...", err)
+			s.enviarNotificacaoLembrete(&cobranca)
+		} else {
+			enfileiradas++
+		}
+
+		// Marcar como processada (não enfileirar novamente)
+		cobranca.NotificacaoLembreteEnviada = true
+		s.cobrancaRepo.Atualizar(&cobranca)
 	}
 
-	wg.Wait()
-	log.Println("✅ Notificações de lembrete enviadas")
+	if enfileiradas > 0 {
+		log.Printf("✅ %d notificações de lembrete enfileiradas para processamento", enfileiradas)
+	}
 }
 
 // EnviarNotificacoesVencimento envia notificações de vencimento (dia do vencimento)
@@ -142,20 +174,40 @@ func (s *AgendadorServico) EnviarNotificacoesVencimento() {
 		return
 	}
 
-	log.Printf("📬 Enviando %d notificações de vencimento (horário comercial)...", len(cobrancas))
+	log.Printf("📬 Enfileirando %d notificações de vencimento...", len(cobrancas))
 
-	// Usar goroutines para enviar notificações em paralelo
-	var wg sync.WaitGroup
+	// Enfileirar todas as mensagens para processamento assíncrono
+	enfileiradas := 0
 	for _, cobranca := range cobrancas {
-		wg.Add(1)
-		go func(c *entidades.Cobranca) {
-			defer wg.Done()
-			s.enviarNotificacaoVencimento(c)
-		}(&cobranca)
+		// Se fila não disponível, enviar direto (fallback)
+		if s.filaMensagem == nil {
+			s.enviarNotificacaoVencimento(&cobranca)
+			continue
+		}
+
+		// Enfileirar mensagem
+		msg := &MensagemFila{
+			ID:              fmt.Sprintf("vencimento_%d_%d", cobranca.ID, time.Now().Unix()),
+			TipoNotificacao: "vencimento",
+			Cobranca:        &cobranca,
+			Tentativas:      0,
+		}
+
+		if err := s.filaMensagem.EnfileirarMensagem(msg); err != nil {
+			log.Printf("❌ Erro ao enfileirar: %v. Enviando direto...", err)
+			s.enviarNotificacaoVencimento(&cobranca)
+		} else {
+			enfileiradas++
+		}
+
+		// Marcar como processada (não enfileirar novamente)
+		cobranca.NotificacaoVencimentoEnviada = true
+		s.cobrancaRepo.Atualizar(&cobranca)
 	}
 
-	wg.Wait()
-	log.Println("✅ Notificações de vencimento enviadas")
+	if enfileiradas > 0 {
+		log.Printf("✅ %d notificações de vencimento enfileiradas para processamento", enfileiradas)
+	}
 }
 
 // ProcessarNotificacoesPendentes processa notificações que ficaram pendentes fora do horário comercial

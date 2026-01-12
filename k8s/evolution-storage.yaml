@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: evolution-data-pvc
+  namespace: ifinu-production
+  labels:
+    app: evolution-api
+spec:
+  accessModes:
+    - ReadWriteMany  # Permite múltiplos pods acessarem
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: nfs-storage  # Use NFS ou similar para acesso compartilhado
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: evolution-postgres-pvc
+  namespace: ifinu-production
+  labels:
+    app: evolution-postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: standard

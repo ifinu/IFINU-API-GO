@@ -1,0 +1,218 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evolution-api
+  namespace: ifinu-production
+  labels:
+    app: evolution-api
+    version: v2.3.7
+spec:
+  replicas: 2  # Mínimo de 2 pods para alta disponibilidade
+  selector:
+    matchLabels:
+      app: evolution-api
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: evolution-api
+        version: v2.3.7
+    spec:
+      containers:
+      - name: evolution-api
+        image: evolution-api:v2.3.7
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        env:
+        - name: SERVER_URL
+          value: "https://wp.ifinu.io"
+        - name: SERVER_PORT
+          value: "8080"
+
+        # Database PostgreSQL
+        - name: DATABASE_ENABLED
+          value: "true"
+        - name: DATABASE_PROVIDER
+          value: "postgresql"
+        - name: DATABASE_CONNECTION_URI
+          valueFrom:
+            secretKeyRef:
+              name: evolution-secrets
+              key: database-uri
+        - name: DATABASE_SAVE_DATA_INSTANCE
+          value: "true"
+        - name: DATABASE_SAVE_DATA_NEW_MESSAGE
+          value: "true"
+        - name: DATABASE_SAVE_DATA_CONTACTS
+          value: "true"
+        - name: DATABASE_SAVE_DATA_CHATS
+          value: "true"
+
+        # Cache - Desabilitado para performance
+        - name: CACHE_REDIS_ENABLED
+          value: "false"
+        - name: CACHE_LOCAL_ENABLED
+          value: "false"
+
+        # Autenticação
+        - name: AUTHENTICATION_TYPE
+          value: "apikey"
+        - name: AUTHENTICATION_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: evolution-secrets
+              key: api-key
+        - name: AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES
+          value: "true"
+
+        # Webhook - Desabilitado
+        - name: WEBHOOK_GLOBAL_ENABLED
+          value: "false"
+
+        # QR Code
+        - name: QRCODE_LIMIT
+          value: "30"
+        - name: QRCODE_COLOR
+          value: "#198754"
+        - name: QRCODE_ENABLED
+          value: "true"
+
+        # Logs
+        - name: LOG_LEVEL
+          value: "WARN"
+        - name: LOG_COLOR
+          value: "true"
+        - name: LOG_BAILEYS
+          value: "error"
+
+        # Instâncias
+        - name: DEL_INSTANCE
+          value: "false"
+        - name: DEL_TEMP_INSTANCES
+          value: "false"
+
+        # WhatsApp Config
+        - name: CONFIG_SESSION_PHONE_VERSION
+          value: "2.2413.51"
+        - name: CONFIG_SESSION_PHONE_PLATFORM
+          value: "android"
+        - name: CONFIG_SESSION_PHONE_CLIENT
+          value: "Chrome"
+
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "2000m"
+
+        volumeMounts:
+        - name: evolution-data
+          mountPath: /evolution/instances
+
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            httpHeaders:
+            - name: apikey
+              value: "health-check"
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 8080
+            httpHeaders:
+            - name: apikey
+              value: "health-check"
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+      volumes:
+      - name: evolution-data
+        persistentVolumeClaim:
+          claimName: evolution-data-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evolution-api-service
+  namespace: ifinu-production
+  labels:
+    app: evolution-api
+spec:
+  type: ClusterIP
+  selector:
+    app: evolution-api
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  sessionAffinity: ClientIP  # Mantém sessões no mesmo pod
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: evolution-api-hpa
+  namespace: ifinu-production
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: evolution-api
+  minReplicas: 2    # Mínimo 2 pods sempre rodando
+  maxReplicas: 20   # Escala até 20 pods em alta demanda
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Escala quando CPU > 70%
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # Escala quando Memória > 80%
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50  # Aumenta 50% dos pods por vez
+        periodSeconds: 60
+      - type: Pods
+        value: 2   # Ou adiciona 2 pods por vez (o que for maior)
+        periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Aguarda 5 min antes de remover pods
+      policies:
+      - type: Percent
+        value: 10  # Remove 10% dos pods por vez
+        periodSeconds: 60
+      - type: Pods
+        value: 1   # Ou remove 1 pod por vez (o que for menor)
+        periodSeconds: 60
+      selectPolicy: Min
