@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 	"github.com/ifinu/ifinu-api-go/dominio/entidades"
+	"github.com/ifinu/ifinu-api-go/integracao"
 	"golang.org/x/time/rate"
 )
 
@@ -33,13 +34,13 @@ type FilaMensagemServico struct {
 	ctx          context.Context
 	rateLimiter  *rate.Limiter
 	whatsappSvc  *WhatsAppServico
-	emailSvc     *ResendCliente
+	emailSvc     *integracao.ResendCliente
 }
 
 func NovoFilaMensagemServico(
 	redisAddr string,
 	whatsappSvc *WhatsAppServico,
-	emailSvc *ResendCliente,
+	emailSvc *integracao.ResendCliente,
 ) *FilaMensagemServico {
 	ctx := context.Background()
 

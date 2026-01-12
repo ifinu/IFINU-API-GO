@@ -57,7 +57,11 @@ func main() {
 	stripeServico := servico.NovoStripeServico(usuarioRepo)
 
 	// Inicializar e iniciar agendador
-	agendadorServico := servico.NovoAgendadorServico(cobrancaRepo, whatsappRepo, evolutionAPI, resendAPI)
+	redisAddr := viper.GetString("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379" // Fallback para desenvolvimento
+	}
+	agendadorServico := servico.NovoAgendadorServico(cobrancaRepo, whatsappRepo, evolutionAPI, resendAPI, whatsappServico, redisAddr)
 	agendadorServico.Iniciar()
 
 	// Inicializar controllers
