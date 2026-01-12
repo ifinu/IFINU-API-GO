@@ -166,31 +166,31 @@ func (s *WhatsAppServico) EnviarMensagem(usuarioID uuid.UUID, telefone, mensagem
 	// Formatar telefone brasileiro (adicionar código do país 55 se necessário)
 	telefoneFormatado := util.FormatarTelefoneBrasileiro(telefone)
 
-	// Enviar mensagem via Evolution API
-	resultado, err := s.evolutionAPI.EnviarMensagemTexto(conexao.InstanceName, telefoneFormatado, mensagem)
-	if err != nil {
-		// Incrementar contador de falhas
-		conexao.MensagensEnviadas++
-		conexao.MensagensFalha++
-		s.whatsappRepo.Atualizar(conexao)
-
-		return &dto.EnviarMensagemResponse{
-			Sucesso:  false,
-			Mensagem: fmt.Sprintf("Erro ao enviar mensagem: %v", err),
-		}, nil
-	}
-
-	// Incrementar contadores de sucesso
+	// Incrementar contador antecipadamente (envio assíncrono)
 	conexao.MensagensEnviadas++
-	conexao.MensagensSucesso++
 	now := time.Now()
 	conexao.DataUltimaAtividade = &now
 	s.whatsappRepo.Atualizar(conexao)
 
+	// Enviar mensagem de forma assíncrona para evitar timeout
+	go func() {
+		resultado, err := s.evolutionAPI.EnviarMensagemTexto(conexao.InstanceName, telefoneFormatado, mensagem)
+
+		// Atualizar estatísticas após envio
+		conexaoAtual, errBusca := s.whatsappRepo.BuscarPorUsuario(usuarioID)
+		if errBusca == nil {
+			if err != nil {
+				conexaoAtual.MensagensFalha++
+			} else if resultado != nil {
+				conexaoAtual.MensagensSucesso++
+			}
+			s.whatsappRepo.Atualizar(conexaoAtual)
+		}
+	}()
+
 	return &dto.EnviarMensagemResponse{
-		Sucesso:   true,
-		Mensagem:  "Mensagem enviada com sucesso",
-		MessageID: resultado.Key.ID,
+		Sucesso:  true,
+		Mensagem: "Mensagem sendo enviada",
 	}, nil
 }
 
