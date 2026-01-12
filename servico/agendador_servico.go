@@ -3,7 +3,6 @@ package servico
 import (
 	"fmt"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/ifinu/ifinu-api-go/dominio/entidades"
