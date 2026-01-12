@@ -4,20 +4,23 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	"github.com/ifinu/ifinu-api-go/dominio/entidades"
 	"github.com/ifinu/ifinu-api-go/dominio/enums"
 	"github.com/ifinu/ifinu-api-go/integracao"
 	"github.com/ifinu/ifinu-api-go/repositorio"
+	"github.com/ifinu/ifinu-api-go/util"
 	"github.com/robfig/cron/v3"
 )
 
 type AgendadorServico struct {
-	cobrancaRepo *repositorio.CobrancaRepositorio
-	whatsappRepo *repositorio.WhatsAppRepositorio
-	evolutionAPI *integracao.EvolutionAPICliente
-	resendAPI    *integracao.ResendCliente
-	cron         *cron.Cron
+	cobrancaRepo     *repositorio.CobrancaRepositorio
+	whatsappRepo     *repositorio.WhatsAppRepositorio
+	evolutionAPI     *integracao.EvolutionAPICliente
+	resendAPI        *integracao.ResendCliente
+	cron             *cron.Cron
+	horarioComercial *util.HorarioComercial
 }
 
 func NovoAgendadorServico(
@@ -27,17 +30,20 @@ func NovoAgendadorServico(
 	resendAPI *integracao.ResendCliente,
 ) *AgendadorServico {
 	return &AgendadorServico{
-		cobrancaRepo: cobrancaRepo,
-		whatsappRepo: whatsappRepo,
-		evolutionAPI: evolutionAPI,
-		resendAPI:    resendAPI,
-		cron:         cron.New(),
+		cobrancaRepo:     cobrancaRepo,
+		whatsappRepo:     whatsappRepo,
+		evolutionAPI:     evolutionAPI,
+		resendAPI:        resendAPI,
+		cron:             cron.New(),
+		horarioComercial: util.HorarioComercialPadrao(),
 	}
 }
 
 // Iniciar inicia o agendador de tarefas
 func (s *AgendadorServico) Iniciar() {
 	log.Println("📅 Iniciando agendador de notificações...")
+	log.Printf("⏰ Horário comercial configurado: %dh às %dh (dias úteis)",
+		s.horarioComercial.HoraInicio, s.horarioComercial.HoraFim)
 
 	// Enviar notificações de lembrete (3 dias antes) - executa todos os dias às 9h
 	s.cron.AddFunc("0 9 * * *", func() {
@@ -49,6 +55,15 @@ func (s *AgendadorServico) Iniciar() {
 	s.cron.AddFunc("0 9 * * *", func() {
 		log.Println("⏰ Executando job: Notificações de vencimento")
 		s.EnviarNotificacoesVencimento()
+	})
+
+	// Processar notificações pendentes - executa a cada hora durante horário comercial
+	s.cron.AddFunc("0 * * * *", func() {
+		agora := time.Now()
+		if s.horarioComercial.EstaDentroHorarioComercial(agora) {
+			log.Println("⏰ Executando job: Processar notificações pendentes (horário comercial)")
+			s.ProcessarNotificacoesPendentes()
+		}
 	})
 
 	// Verificar cobranças vencidas - executa todos os dias às 23h
@@ -69,6 +84,15 @@ func (s *AgendadorServico) Parar() {
 
 // EnviarNotificacoesLembrete envia notificações de lembrete (3 dias antes do vencimento)
 func (s *AgendadorServico) EnviarNotificacoesLembrete() {
+	agora := time.Now()
+
+	// Verificar se está dentro do horário comercial
+	if !s.horarioComercial.EstaDentroHorarioComercial(agora) {
+		proximoHorario := s.horarioComercial.FormatarProximoHorario(agora)
+		log.Printf("⏸️  Fora do horário comercial. Próxima tentativa: %s", proximoHorario)
+		return
+	}
+
 	cobrancas, err := s.cobrancaRepo.BuscarCobrancasParaLembrete()
 	if err != nil {
 		log.Printf("❌ Erro ao buscar cobranças para lembrete: %v", err)
@@ -80,7 +104,7 @@ func (s *AgendadorServico) EnviarNotificacoesLembrete() {
 		return
 	}
 
-	log.Printf("📬 Enviando %d notificações de lembrete...", len(cobrancas))
+	log.Printf("📬 Enviando %d notificações de lembrete (horário comercial)...", len(cobrancas))
 
 	// Usar goroutines para enviar notificações em paralelo
 	var wg sync.WaitGroup
@@ -98,6 +122,15 @@ func (s *AgendadorServico) EnviarNotificacoesLembrete() {
 
 // EnviarNotificacoesVencimento envia notificações de vencimento (dia do vencimento)
 func (s *AgendadorServico) EnviarNotificacoesVencimento() {
+	agora := time.Now()
+
+	// Verificar se está dentro do horário comercial
+	if !s.horarioComercial.EstaDentroHorarioComercial(agora) {
+		proximoHorario := s.horarioComercial.FormatarProximoHorario(agora)
+		log.Printf("⏸️  Fora do horário comercial. Próxima tentativa: %s", proximoHorario)
+		return
+	}
+
 	cobrancas, err := s.cobrancaRepo.BuscarCobrancasVencendoHoje()
 	if err != nil {
 		log.Printf("❌ Erro ao buscar cobranças vencendo hoje: %v", err)
@@ -109,7 +142,7 @@ func (s *AgendadorServico) EnviarNotificacoesVencimento() {
 		return
 	}
 
-	log.Printf("📬 Enviando %d notificações de vencimento...", len(cobrancas))
+	log.Printf("📬 Enviando %d notificações de vencimento (horário comercial)...", len(cobrancas))
 
 	// Usar goroutines para enviar notificações em paralelo
 	var wg sync.WaitGroup
@@ -123,6 +156,15 @@ func (s *AgendadorServico) EnviarNotificacoesVencimento() {
 
 	wg.Wait()
 	log.Println("✅ Notificações de vencimento enviadas")
+}
+
+// ProcessarNotificacoesPendentes processa notificações que ficaram pendentes fora do horário comercial
+func (s *AgendadorServico) ProcessarNotificacoesPendentes() {
+	// Processar lembretes pendentes
+	s.EnviarNotificacoesLembrete()
+
+	// Processar vencimentos pendentes
+	s.EnviarNotificacoesVencimento()
 }
 
 // enviarNotificacaoLembrete envia notificação de lembrete para uma cobrança
