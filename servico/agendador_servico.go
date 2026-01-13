@@ -145,11 +145,11 @@ func (s *AgendadorServico) EnviarNotificacoesLembrete() {
 			s.enviarNotificacaoLembrete(&cobranca)
 		} else {
 			enfileiradas++
+			// Marcar como processada APENAS após enfileirar com sucesso
+			// O envio real será feito pelos workers da fila
+			cobranca.NotificacaoLembreteEnviada = true
+			s.cobrancaRepo.Atualizar(&cobranca)
 		}
-
-		// Marcar como processada (não enfileirar novamente)
-		cobranca.NotificacaoLembreteEnviada = true
-		s.cobrancaRepo.Atualizar(&cobranca)
 	}
 
 	if enfileiradas > 0 {
@@ -203,11 +203,11 @@ func (s *AgendadorServico) EnviarNotificacoesVencimento() {
 			s.enviarNotificacaoVencimento(&cobranca)
 		} else {
 			enfileiradas++
+			// Marcar como processada APENAS após enfileirar com sucesso
+			// O envio real será feito pelos workers da fila
+			cobranca.NotificacaoVencimentoEnviada = true
+			s.cobrancaRepo.Atualizar(&cobranca)
 		}
-
-		// Marcar como processada (não enfileirar novamente)
-		cobranca.NotificacaoVencimentoEnviada = true
-		s.cobrancaRepo.Atualizar(&cobranca)
 	}
 
 	if enfileiradas > 0 {

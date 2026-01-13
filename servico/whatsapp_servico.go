@@ -213,6 +213,60 @@ func (s *WhatsAppServico) EnviarMensagem(usuarioID uuid.UUID, telefone, mensagem
 	}, nil
 }
 
+// EnviarMensagemSincrono envia uma mensagem via WhatsApp de forma síncrona
+// Usado pela fila de mensagens para evitar dupla camada assíncrona
+func (s *WhatsAppServico) EnviarMensagemSincrono(usuarioID uuid.UUID, telefone, mensagem string) (*dto.EnviarMensagemResponse, error) {
+	// Buscar conexão
+	conexao, err := s.whatsappRepo.BuscarPorUsuario(usuarioID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("WhatsApp não conectado")
+		}
+		return nil, err
+	}
+
+	// VALIDAÇÃO CRÍTICA: Garantir que a conexão pertence ao usuário solicitado
+	if conexao.UsuarioID != usuarioID {
+		log.Printf("⛔ SEGURANÇA CRÍTICA: Conexão WhatsApp pertence a usuário diferente! Solicitado: %s, Conexão: %s",
+			usuarioID, conexao.UsuarioID)
+		return nil, errors.New("erro de isolamento de dados detectado")
+	}
+
+	if !conexao.IsConectado() {
+		return nil, errors.New("WhatsApp não está conectado")
+	}
+
+	// Formatar telefone brasileiro
+	telefoneFormatado := util.FormatarTelefoneBrasileiro(telefone)
+
+	log.Printf("📤 [SYNC] Enviando para %s (instância: %s)", telefoneFormatado, conexao.InstanceName)
+
+	// Enviar mensagem de forma SÍNCRONA (sem goroutine)
+	resultado, err := s.evolutionAPI.EnviarMensagemTexto(conexao.InstanceName, telefoneFormatado, mensagem)
+
+	// Atualizar estatísticas
+	conexao.MensagensEnviadas++
+	now := time.Now()
+	conexao.DataUltimaAtividade = &now
+
+	if err != nil {
+		conexao.MensagensFalha++
+		log.Printf("❌ [SYNC] Erro ao enviar: %v", err)
+		s.whatsappRepo.Atualizar(conexao)
+		return nil, fmt.Errorf("erro ao enviar mensagem: %w", err)
+	}
+
+	conexao.MensagensSucesso++
+	s.whatsappRepo.Atualizar(conexao)
+
+	log.Printf("✅ [SYNC] Mensagem enviada! MessageID: %s", resultado.Key.ID)
+
+	return &dto.EnviarMensagemResponse{
+		Sucesso:  true,
+		Mensagem: "Mensagem enviada com sucesso",
+	}, nil
+}
+
 // TestarConexao testa a conexão WhatsApp
 func (s *WhatsAppServico) TestarConexao(usuarioID uuid.UUID) (*dto.TestarConexaoResponse, error) {
 	// Buscar conexão

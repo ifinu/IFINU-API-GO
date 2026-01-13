@@ -237,8 +237,8 @@ func (s *FilaMensagemServico) enviarWhatsApp(msg *MensagemFila) bool {
 		return false
 	}
 
-	// Enviar via WhatsApp
-	_, err := s.whatsappSvc.EnviarMensagem(
+	// Enviar via WhatsApp de forma SÍNCRONA (fila já é assíncrona)
+	_, err := s.whatsappSvc.EnviarMensagemSincrono(
 		cobranca.UsuarioID,
 		cobranca.Cliente.Telefone,
 		textoMensagem,
