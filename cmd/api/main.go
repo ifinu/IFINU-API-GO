@@ -61,7 +61,7 @@ func main() {
 	if redisAddr == "" {
 		redisAddr = "localhost:6379" // Fallback para desenvolvimento
 	}
-	agendadorServico := servico.NovoAgendadorServico(cobrancaRepo, whatsappRepo, evolutionAPI, resendAPI, whatsappServico, redisAddr)
+	agendadorServico := servico.NovoAgendadorServico(cobrancaRepo, whatsappRepo, usuarioRepo, assinaturaRepo, evolutionAPI, resendAPI, whatsappServico, redisAddr)
 	agendadorServico.Iniciar()
 
 	// Inicializar controllers

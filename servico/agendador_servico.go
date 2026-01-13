@@ -16,6 +16,8 @@ import (
 type AgendadorServico struct {
 	cobrancaRepo     *repositorio.CobrancaRepositorio
 	whatsappRepo     *repositorio.WhatsAppRepositorio
+	usuarioRepo      *repositorio.UsuarioRepositorio
+	assinaturaRepo   *repositorio.AssinaturaRepositorio
 	evolutionAPI     *integracao.EvolutionAPICliente
 	resendAPI        *integracao.ResendCliente
 	cron             *cron.Cron
@@ -26,6 +28,8 @@ type AgendadorServico struct {
 func NovoAgendadorServico(
 	cobrancaRepo *repositorio.CobrancaRepositorio,
 	whatsappRepo *repositorio.WhatsAppRepositorio,
+	usuarioRepo *repositorio.UsuarioRepositorio,
+	assinaturaRepo *repositorio.AssinaturaRepositorio,
 	evolutionAPI *integracao.EvolutionAPICliente,
 	resendAPI *integracao.ResendCliente,
 	whatsappServico *WhatsAppServico,
@@ -42,6 +46,8 @@ func NovoAgendadorServico(
 	return &AgendadorServico{
 		cobrancaRepo:     cobrancaRepo,
 		whatsappRepo:     whatsappRepo,
+		usuarioRepo:      usuarioRepo,
+		assinaturaRepo:   assinaturaRepo,
 		evolutionAPI:     evolutionAPI,
 		resendAPI:        resendAPI,
 		cron:             cron.New(),
@@ -218,11 +224,46 @@ func (s *AgendadorServico) ProcessarNotificacoesPendentes() {
 	s.EnviarNotificacoesVencimento()
 }
 
+// usuarioTemAssinaturaAtiva verifica se usuário tem assinatura ativa ou trial válido
+func (s *AgendadorServico) usuarioTemAssinaturaAtiva(usuarioID uuid.UUID) bool {
+	// Buscar usuário
+	usuario, err := s.usuarioRepo.BuscarPorID(usuarioID)
+	if err != nil {
+		log.Printf("⚠️  Erro ao buscar usuário %s: %v", usuarioID, err)
+		return false
+	}
+
+	// Verificar se é vitalício
+	if usuario.Vitalicio {
+		return true
+	}
+
+	// Verificar se tem trial ativo e não expirado
+	if usuario.TrialAtivo && !usuario.IsTrialExpirado() {
+		return true
+	}
+
+	// Verificar se tem assinatura ativa
+	assinatura, err := s.assinaturaRepo.BuscarPorUsuario(usuarioID)
+	if err == nil && assinatura.IsAtiva() {
+		return true
+	}
+
+	return false
+}
+
 // enviarNotificacaoLembrete envia notificação de lembrete para uma cobrança
 func (s *AgendadorServico) enviarNotificacaoLembrete(cobranca *entidades.Cobranca) {
 	// VALIDAÇÃO CRÍTICA: Verificar isolamento de dados
 	if cobranca.UsuarioID == uuid.Nil {
 		log.Printf("⛔ SEGURANÇA: Cobrança %d sem usuário associado", cobranca.ID)
+		return
+	}
+
+	// VALIDAÇÃO DE NEGÓCIO: Verificar se usuário tem assinatura ativa
+	if !s.usuarioTemAssinaturaAtiva(cobranca.UsuarioID) {
+		log.Printf("🚫 Usuário %s sem assinatura ativa. Pulando envio de lembrete para cobrança %d",
+			cobranca.UsuarioID, cobranca.ID)
 		return
 	}
 
@@ -290,6 +331,13 @@ func (s *AgendadorServico) enviarNotificacaoVencimento(cobranca *entidades.Cobra
 	// VALIDAÇÃO CRÍTICA: Verificar isolamento de dados
 	if cobranca.UsuarioID == uuid.Nil {
 		log.Printf("⛔ SEGURANÇA: Cobrança %d sem usuário associado", cobranca.ID)
+		return
+	}
+
+	// VALIDAÇÃO DE NEGÓCIO: Verificar se usuário tem assinatura ativa
+	if !s.usuarioTemAssinaturaAtiva(cobranca.UsuarioID) {
+		log.Printf("🚫 Usuário %s sem assinatura ativa. Pulando envio de vencimento para cobrança %d",
+			cobranca.UsuarioID, cobranca.ID)
 		return
 	}
 
