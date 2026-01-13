@@ -40,6 +40,7 @@ func main() {
 	cobrancaRepo := repositorio.NovoCobrancaRepositorio(config.DB)
 	whatsappRepo := repositorio.NovoWhatsAppRepositorio(config.DB)
 	assinaturaRepo := repositorio.NovoAssinaturaRepositorio(config.DB)
+	stripeConfigRepo := repositorio.NovoStripeConfigRepositorio(config.DB)
 
 	// Inicializar integrações
 	evolutionAPI := integracao.NovoEvolutionAPICliente()
@@ -55,6 +56,7 @@ func main() {
 	assinaturaServico := servico.NovoAssinaturaServico(assinaturaRepo, usuarioRepo)
 	relatorioServico := servico.NovoRelatorioServico(clienteRepo, cobrancaRepo)
 	stripeServico := servico.NovoStripeServico(usuarioRepo)
+	stripeConfigServico := servico.NovoStripeConfigServico(stripeConfigRepo)
 
 	// Inicializar e iniciar agendador
 	redisAddr := viper.GetString("REDIS_ADDR")
@@ -72,6 +74,7 @@ func main() {
 	assinaturaController := controlador.NovoAssinaturaControlador(assinaturaServico)
 	relatorioController := controlador.NovoRelatorioControlador(relatorioServico)
 	stripeController := controlador.NovoStripeControlador(stripeServico)
+	stripeConfigController := controlador.NovoStripeConfigControlador(stripeConfigServico)
 
 	// Configurar Gin
 	if viper.GetString("APP_ENV") == "production" {
@@ -167,6 +170,15 @@ func main() {
 		{
 			// Rota de perfil (sem exigir assinatura ativa)
 			autenticado.GET("/perfil", autenticacaoController.Me)
+
+			// Rotas de configuração Stripe (sem exigir assinatura ativa)
+			stripeConfig := autenticado.Group("/stripe")
+			{
+				stripeConfig.GET("/config", stripeConfigController.BuscarConfiguracao)
+				stripeConfig.POST("/config", stripeConfigController.SalvarConfiguracao)
+				stripeConfig.DELETE("/config", stripeConfigController.DeletarConfiguracao)
+				stripeConfig.POST("/test-connection", stripeConfigController.TestarConexao)
+			}
 		}
 
 		// Rotas protegidas (requerem autenticação e assinatura ativa)
