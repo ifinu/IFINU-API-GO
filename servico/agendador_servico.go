@@ -220,9 +220,25 @@ func (s *AgendadorServico) ProcessarNotificacoesPendentes() {
 
 // enviarNotificacaoLembrete envia notificação de lembrete para uma cobrança
 func (s *AgendadorServico) enviarNotificacaoLembrete(cobranca *entidades.Cobranca) {
+	// VALIDAÇÃO CRÍTICA: Verificar isolamento de dados
+	if cobranca.UsuarioID == uuid.Nil {
+		log.Printf("⛔ SEGURANÇA: Cobrança %d sem usuário associado", cobranca.ID)
+		return
+	}
+
 	// Enviar WhatsApp
 	conexao, err := s.whatsappRepo.BuscarPorUsuario(cobranca.UsuarioID)
 	if err == nil && conexao.IsConectado() {
+		// VALIDAÇÃO CRÍTICA: Garantir que a conexão pertence ao mesmo usuário da cobrança
+		if conexao.UsuarioID != cobranca.UsuarioID {
+			log.Printf("⛔ SEGURANÇA: Tentativa de usar conexão WhatsApp de usuário diferente! Cobrança: %s, Conexão: %s",
+				cobranca.UsuarioID, conexao.UsuarioID)
+			return
+		}
+
+		log.Printf("📤 Enviando lembrete: Usuário=%s, Cliente=%s (ID:%d), Telefone=%s",
+			cobranca.UsuarioID, cobranca.Cliente.Nome, cobranca.ClienteID, cobranca.Cliente.Telefone)
+
 		mensagem := fmt.Sprintf(
 			"🔔 *Lembrete de Cobrança*\n\n"+
 				"Olá, %s!\n\n"+
@@ -245,7 +261,8 @@ func (s *AgendadorServico) enviarNotificacaoLembrete(cobranca *entidades.Cobranc
 		if err != nil {
 			log.Printf("❌ Erro ao enviar WhatsApp para %s: %v", cobranca.Cliente.Nome, err)
 		} else {
-			log.Printf("✅ WhatsApp enviado para %s", cobranca.Cliente.Nome)
+			log.Printf("✅ WhatsApp enviado para %s (Cliente ID: %d, Usuário: %s)",
+				cobranca.Cliente.Nome, cobranca.ClienteID, cobranca.UsuarioID)
 		}
 	}
 
@@ -270,9 +287,25 @@ func (s *AgendadorServico) enviarNotificacaoLembrete(cobranca *entidades.Cobranc
 
 // enviarNotificacaoVencimento envia notificação de vencimento para uma cobrança
 func (s *AgendadorServico) enviarNotificacaoVencimento(cobranca *entidades.Cobranca) {
+	// VALIDAÇÃO CRÍTICA: Verificar isolamento de dados
+	if cobranca.UsuarioID == uuid.Nil {
+		log.Printf("⛔ SEGURANÇA: Cobrança %d sem usuário associado", cobranca.ID)
+		return
+	}
+
 	// Enviar WhatsApp
 	conexao, err := s.whatsappRepo.BuscarPorUsuario(cobranca.UsuarioID)
 	if err == nil && conexao.IsConectado() {
+		// VALIDAÇÃO CRÍTICA: Garantir que a conexão pertence ao mesmo usuário da cobrança
+		if conexao.UsuarioID != cobranca.UsuarioID {
+			log.Printf("⛔ SEGURANÇA: Tentativa de usar conexão WhatsApp de usuário diferente! Cobrança: %s, Conexão: %s",
+				cobranca.UsuarioID, conexao.UsuarioID)
+			return
+		}
+
+		log.Printf("📤 Enviando vencimento: Usuário=%s, Cliente=%s (ID:%d), Telefone=%s",
+			cobranca.UsuarioID, cobranca.Cliente.Nome, cobranca.ClienteID, cobranca.Cliente.Telefone)
+
 		mensagem := fmt.Sprintf(
 			"⚠️ *Cobrança Vence Hoje*\n\n"+
 				"Olá, %s!\n\n"+
@@ -293,7 +326,8 @@ func (s *AgendadorServico) enviarNotificacaoVencimento(cobranca *entidades.Cobra
 		if err != nil {
 			log.Printf("❌ Erro ao enviar WhatsApp para %s: %v", cobranca.Cliente.Nome, err)
 		} else {
-			log.Printf("✅ WhatsApp enviado para %s", cobranca.Cliente.Nome)
+			log.Printf("✅ WhatsApp enviado para %s (Cliente ID: %d, Usuário: %s)",
+				cobranca.Cliente.Nome, cobranca.ClienteID, cobranca.UsuarioID)
 		}
 	}
 

@@ -194,6 +194,15 @@ func (s *FilaMensagemServico) processarMensagem(workerID int, msg *MensagemFila)
 func (s *FilaMensagemServico) enviarWhatsApp(msg *MensagemFila) bool {
 	cobranca := msg.Cobranca
 
+	// VALIDAÇÃO CRÍTICA: Verificar isolamento de dados
+	if cobranca.UsuarioID.String() == "00000000-0000-0000-0000-000000000000" {
+		log.Printf("⛔ SEGURANÇA: Cobrança %d sem usuário associado na fila", cobranca.ID)
+		return false
+	}
+
+	log.Printf("📤 [FILA] Enviando %s: Usuário=%s, Cliente=%s (ID:%d), Telefone=%s",
+		msg.TipoNotificacao, cobranca.UsuarioID, cobranca.Cliente.Nome, cobranca.ClienteID, cobranca.Cliente.Telefone)
+
 	// Montar mensagem baseada no tipo
 	var textoMensagem string
 	switch msg.TipoNotificacao {
@@ -234,6 +243,12 @@ func (s *FilaMensagemServico) enviarWhatsApp(msg *MensagemFila) bool {
 		cobranca.Cliente.Telefone,
 		textoMensagem,
 	)
+
+	if err == nil {
+		log.Printf("✅ [FILA] Mensagem enviada: Cliente=%s, Usuário=%s", cobranca.Cliente.Nome, cobranca.UsuarioID)
+	} else {
+		log.Printf("❌ [FILA] Erro ao enviar: %v", err)
+	}
 
 	return err == nil
 }

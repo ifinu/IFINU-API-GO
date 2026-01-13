@@ -159,6 +159,13 @@ func (s *WhatsAppServico) EnviarMensagem(usuarioID uuid.UUID, telefone, mensagem
 		return nil, err
 	}
 
+	// VALIDAÇÃO CRÍTICA: Garantir que a conexão pertence ao usuário solicitado
+	if conexao.UsuarioID != usuarioID {
+		log.Printf("⛔ SEGURANÇA CRÍTICA: Conexão WhatsApp pertence a usuário diferente! Solicitado: %s, Conexão: %s",
+			usuarioID, conexao.UsuarioID)
+		return nil, errors.New("erro de isolamento de dados detectado")
+	}
+
 	if !conexao.IsConectado() {
 		return nil, errors.New("WhatsApp não está conectado")
 	}
