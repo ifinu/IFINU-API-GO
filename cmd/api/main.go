@@ -220,6 +220,12 @@ func main() {
 			{
 				relatorios.GET("/dashboard", relatorioController.Dashboard)
 			}
+
+			// Rotas de Stripe Connect
+			stripeConnect := protegido.Group("/stripe-connect")
+			{
+				stripeConnect.POST("/create-checkout-session", stripeController.CreateCheckoutSession)
+			}
 		}
 	}
 
