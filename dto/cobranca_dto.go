@@ -49,7 +49,7 @@ type BuscarCobrancasRequest struct {
 	DataInicio    *time.Time            `form:"dataInicio"`
 	DataFim       *time.Time            `form:"dataFim"`
 	ClienteID     *int64                `form:"clienteId"`
-	Pagina        int                   `form:"pagina" binding:"min=1"`
+	Pagina        int                   `form:"pagina" binding:"min=0"`
 	TamanhoPagina int                   `form:"tamanhoPagina" binding:"min=1,max=100"`
 }
 
