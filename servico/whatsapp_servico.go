@@ -3,6 +3,7 @@ package servico
 import (
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/google/uuid"

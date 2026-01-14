@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/ifinu/ifinu-api-go/dominio/entidades"
 	"github.com/ifinu/ifinu-api-go/dominio/enums"
 	"github.com/ifinu/ifinu-api-go/integracao"
