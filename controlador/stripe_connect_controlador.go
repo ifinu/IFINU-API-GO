@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/ifinu/ifinu-api-go/dto"
 	"github.com/ifinu/ifinu-api-go/middleware"
 	"github.com/ifinu/ifinu-api-go/servico"
 	"github.com/ifinu/ifinu-api-go/util"
