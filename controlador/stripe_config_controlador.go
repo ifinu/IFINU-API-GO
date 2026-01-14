@@ -96,16 +96,13 @@ func (ctrl *StripeConfigControlador) TestarConexao(c *gin.Context) {
 
 	stripe.Key = chaveSecreta
 
-	_, err = account.GetByID("acct_", nil)
+	_, err = account.Get()
 	if err != nil {
-		_, err = account.Get(nil)
-		if err != nil {
-			util.RespostaSucesso(c, "", dto.TestConnectionResponse{
-				Success: false,
-				Message: "Falha ao conectar com Stripe. Verifique suas chaves.",
-			})
-			return
-		}
+		util.RespostaSucesso(c, "", dto.TestConnectionResponse{
+			Success: false,
+			Message: "Falha ao conectar com Stripe. Verifique suas chaves.",
+		})
+		return
 	}
 
 	util.RespostaSucesso(c, "", dto.TestConnectionResponse{
