@@ -251,12 +251,25 @@ func (s *CobrancaServico) mapearParaDTO(cobranca *entidades.Cobranca) *dto.Cobra
 	// Determinar recorrência
 	recorrente := cobranca.TipoRecorrencia != enums.TipoRecorrenciaUnica
 
+	// Extrair dados do cliente com fallbacks seguros
+	clienteNome := "Cliente"
+	clienteEmail := ""
+	clienteTelefone := ""
+
+	if cobranca.Cliente.ID != 0 {
+		if cobranca.Cliente.Nome != "" {
+			clienteNome = cobranca.Cliente.Nome
+		}
+		clienteEmail = cobranca.Cliente.Email
+		clienteTelefone = cobranca.Cliente.Telefone
+	}
+
 	response := &dto.CobrancaResponse{
 		ID:                           cobranca.ID,
 		ClienteID:                    cobranca.ClienteID,
-		ClienteNome:                  cobranca.Cliente.Nome,
-		ClienteEmail:                 cobranca.Cliente.Email,
-		ClienteTelefone:              cobranca.Cliente.Telefone,
+		ClienteNome:                  clienteNome,
+		ClienteEmail:                 clienteEmail,
+		ClienteTelefone:              clienteTelefone,
 		Valor:                        cobranca.Valor,
 		Descricao:                    cobranca.Descricao,
 		Status:                       cobranca.Status,
