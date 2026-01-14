@@ -22,13 +22,22 @@ type CobrancaResponse struct {
 	ID                             int64                    `json:"id"`
 	ClienteID                      int64                    `json:"clienteId"`
 	Cliente                        *ClienteResponse         `json:"cliente,omitempty"`
+	ClienteNome                    string                   `json:"clienteNome"`
+	ClienteEmail                   string                   `json:"clienteEmail,omitempty"`
+	ClienteTelefone                string                   `json:"clienteTelefone"`
 	Valor                          float64                  `json:"valor"`
 	Descricao                      string                   `json:"descricao"`
 	Status                         enums.StatusCobranca     `json:"status"`
+	StatusDescricao                string                   `json:"statusDescricao"`
 	DataVencimento                 time.Time                `json:"dataVencimento"`
 	DataPagamento                  *time.Time               `json:"dataPagamento,omitempty"`
 	TipoRecorrencia                enums.TipoRecorrencia    `json:"tipoRecorrencia"`
+	TipoRecorrenciaDescricao       string                   `json:"tipoRecorrenciaDescricao"`
+	Recorrente                     bool                     `json:"recorrente"`
+	Vencida                        bool                     `json:"vencida"`
+	DiasAtraso                     int                      `json:"diasAtraso"`
 	LinkPagamento                  string                   `json:"linkPagamento,omitempty"`
+	NotificacaoEnviada             bool                     `json:"notificacaoEnviada"`
 	NotificacaoLembreteEnviada     bool                     `json:"notificacaoLembreteEnviada"`
 	NotificacaoVencimentoEnviada   bool                     `json:"notificacaoVencimentoEnviada"`
 	DataCriacao                    time.Time                `json:"dataCriacao"`

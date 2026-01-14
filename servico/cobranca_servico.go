@@ -239,15 +239,36 @@ func (s *CobrancaServico) ObterEstatisticas(usuarioID uuid.UUID) (*dto.Estatisti
 
 // mapearParaDTO converte Cobranca para CobrancaResponse
 func (s *CobrancaServico) mapearParaDTO(cobranca *entidades.Cobranca) *dto.CobrancaResponse {
+	// Calcular se está vencida e dias de atraso
+	hoje := time.Now().Truncate(24 * time.Hour)
+	dataVenc := cobranca.DataVencimento.Truncate(24 * time.Hour)
+	vencida := dataVenc.Before(hoje) && cobranca.Status == enums.StatusCobrancaPendente
+	diasAtraso := 0
+	if vencida {
+		diasAtraso = int(hoje.Sub(dataVenc).Hours() / 24)
+	}
+
+	// Determinar recorrência
+	recorrente := cobranca.TipoRecorrencia != enums.TipoRecorrenciaUnica
+
 	response := &dto.CobrancaResponse{
 		ID:                           cobranca.ID,
 		ClienteID:                    cobranca.ClienteID,
+		ClienteNome:                  cobranca.Cliente.Nome,
+		ClienteEmail:                 cobranca.Cliente.Email,
+		ClienteTelefone:              cobranca.Cliente.Telefone,
 		Valor:                        cobranca.Valor,
 		Descricao:                    cobranca.Descricao,
 		Status:                       cobranca.Status,
+		StatusDescricao:              string(cobranca.Status),
 		DataVencimento:               cobranca.DataVencimento,
 		DataPagamento:                cobranca.DataPagamento,
 		TipoRecorrencia:              cobranca.TipoRecorrencia,
+		TipoRecorrenciaDescricao:     string(cobranca.TipoRecorrencia),
+		Recorrente:                   recorrente,
+		Vencida:                      vencida,
+		DiasAtraso:                   diasAtraso,
+		NotificacaoEnviada:           cobranca.NotificacaoLembreteEnviada || cobranca.NotificacaoVencimentoEnviada,
 		NotificacaoLembreteEnviada:   cobranca.NotificacaoLembreteEnviada,
 		NotificacaoVencimentoEnviada: cobranca.NotificacaoVencimentoEnviada,
 		DataCriacao:                  cobranca.DataCriacao,
