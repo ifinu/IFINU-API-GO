@@ -55,7 +55,7 @@ func main() {
 	whatsappServico := servico.NovoWhatsAppServico(whatsappRepo, usuarioRepo, evolutionAPI)
 	assinaturaServico := servico.NovoAssinaturaServico(assinaturaRepo, usuarioRepo)
 	relatorioServico := servico.NovoRelatorioServico(clienteRepo, cobrancaRepo)
-	stripeServico := servico.NovoStripeServico(usuarioRepo)
+	stripeServico := servico.NovoStripeServico(usuarioRepo, assinaturaRepo)
 	stripeConfigServico := servico.NovoStripeConfigServico(stripeConfigRepo)
 
 	// Inicializar e iniciar agendador
@@ -146,6 +146,9 @@ func main() {
 	// Grupo de rotas API
 	api := r.Group("/api")
 	{
+		// Webhook Stripe (público - sem autenticação)
+		api.POST("/stripe/webhook", stripeController.WebhookStripe)
+
 		// Rotas de autenticação (públicas)
 		auth := api.Group("/auth")
 		{
@@ -225,6 +228,8 @@ func main() {
 			assinaturas := protegido.Group("/assinaturas")
 			{
 				assinaturas.GET("/status", assinaturaController.Status)
+				assinaturas.GET("/planos", stripeController.ListarPlanos)
+				assinaturas.POST("/checkout", stripeController.CriarCheckoutAssinatura)
 			}
 
 			// Rotas de relatórios
