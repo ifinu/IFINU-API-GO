@@ -97,7 +97,10 @@ func (s *CobrancaServico) Listar(usuarioID uuid.UUID) ([]dto.CobrancaResponse, e
 
 // Buscar busca cobranças com filtros e paginação
 func (s *CobrancaServico) Buscar(usuarioID uuid.UUID, req dto.BuscarCobrancasRequest) (*dto.CobrancaListResponse, error) {
-	// Valores padrão
+	// Armazenar página original para resposta
+	paginaOriginal := req.Pagina
+
+	// Valores padrão e conversão para one-indexed (usado internamente)
 	if req.Pagina == 0 {
 		req.Pagina = 1
 	}
@@ -127,7 +130,7 @@ func (s *CobrancaServico) Buscar(usuarioID uuid.UUID, req dto.BuscarCobrancasReq
 	return &dto.CobrancaListResponse{
 		Cobrancas:     cobrancasDTO,
 		Total:         total,
-		Pagina:        req.Pagina,
+		Pagina:        paginaOriginal,
 		TamanhoPagina: req.TamanhoPagina,
 		TotalPaginas:  totalPaginas,
 	}, nil

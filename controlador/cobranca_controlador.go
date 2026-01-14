@@ -80,8 +80,8 @@ func (ctrl *CobrancaControlador) Listar(c *gin.Context) {
 
 	// Verificar se tem parâmetros de busca
 	var req dto.BuscarCobrancasRequest
-	if err := c.ShouldBindQuery(&req); err == nil && req.Pagina > 0 {
-		// Busca com filtros
+	if err := c.ShouldBindQuery(&req); err == nil && req.Pagina >= 0 && req.TamanhoPagina > 0 {
+		// Busca com filtros e paginação
 		resultado, err := ctrl.cobrancaServico.Buscar(usuarioID, req)
 		if err != nil {
 			util.RespostaErro(c, http.StatusInternalServerError, "Erro ao buscar cobranças", err)
@@ -91,7 +91,7 @@ func (ctrl *CobrancaControlador) Listar(c *gin.Context) {
 		return
 	}
 
-	// Listagem simples
+	// Listagem simples (sem paginação)
 	resultado, err := ctrl.cobrancaServico.Listar(usuarioID)
 	if err != nil {
 		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao listar cobranças", err)
