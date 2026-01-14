@@ -14,10 +14,10 @@ func NovoAssinaturaRepositorio(db *gorm.DB) *AssinaturaRepositorio {
 	return &AssinaturaRepositorio{db: db}
 }
 
-// BuscarPorUsuario encontra a assinatura ativa de um usuário
+// BuscarPorUsuario encontra a assinatura de um usuário
 func (r *AssinaturaRepositorio) BuscarPorUsuario(usuarioID uuid.UUID) (*entidades.AssinaturaUsuario, error) {
 	var assinatura entidades.AssinaturaUsuario
-	err := r.db.Where("usuario_id = ? AND ativa = ?", usuarioID, true).First(&assinatura).Error
+	err := r.db.Where("usuario_id = ?", usuarioID).First(&assinatura).Error
 	if err != nil {
 		return nil, err
 	}
@@ -57,15 +57,15 @@ func (r *AssinaturaRepositorio) Atualizar(assinatura *entidades.AssinaturaUsuari
 // DesativarAssinaturaAnterior desativa qualquer assinatura ativa anterior do usuário
 func (r *AssinaturaRepositorio) DesativarAssinaturaAnterior(usuarioID uuid.UUID) error {
 	return r.db.Model(&entidades.AssinaturaUsuario{}).
-		Where("usuario_id = ? AND ativa = ?", usuarioID, true).
-		Update("ativa", false).Error
+		Where("usuario_id = ? AND status IN ?", usuarioID, []string{"ATIVA", "PERIODO_GRATUITO"}).
+		Update("status", entidades.StatusCancelada).Error
 }
 
 // BuscarAssinaturasVencidas retorna assinaturas que venceram
 func (r *AssinaturaRepositorio) BuscarAssinaturasVencidas() ([]entidades.AssinaturaUsuario, error) {
 	var assinaturas []entidades.AssinaturaUsuario
 	err := r.db.Preload("Usuario").
-		Where("ativa = ? AND data_fim < NOW()", true).
+		Where("status = ? AND data_proxima_cobranca < NOW()", entidades.StatusAtiva).
 		Find(&assinaturas).Error
 	return assinaturas, err
 }

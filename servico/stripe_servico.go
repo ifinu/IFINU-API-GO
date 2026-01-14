@@ -225,24 +225,36 @@ func (s *StripeServico) ProcessarPagamentoWebhook(sessionID string, metadata map
 
 	// Buscar ou criar assinatura do usuário
 	assinatura, err := s.assinaturaRepo.BuscarPorUsuario(usuarioID)
+
+	agora := time.Now()
+	intervaloMeses := enums.ObterIntervaloCobranca(plano)
+	proximaCobranca := agora.AddDate(0, intervaloMeses, 0)
+	valor := enums.ObterValorPlano(plano)
+
 	if err != nil {
-		// Assinatura não existe, vamos criar uma nova
-		// Por enquanto, apenas logamos o sucesso
-		// TODO: Criar nova assinatura
-		return fmt.Errorf("assinatura não encontrada para usuário %s", usuarioID)
+		// Assinatura não existe, criar uma nova
+		novaAssinatura := &entidades.AssinaturaUsuario{
+			UsuarioID:           usuarioID,
+			Status:              entidades.StatusAtiva,
+			PlanoAssinatura:     plano,
+			DataUltimaCobranca:  &agora,
+			DataProximaCobranca: &proximaCobranca,
+			ValorMensal:         valor,
+			Currency:            "BRL",
+			Country:             "BR",
+			UltimaTransacaoID:   sessionID,
+		}
+
+		return s.assinaturaRepo.Criar(novaAssinatura)
 	}
 
-	// Atualizar assinatura
+	// Assinatura existe, atualizar
 	assinatura.Status = entidades.StatusAtiva
 	assinatura.PlanoAssinatura = plano
 	assinatura.UltimaTransacaoID = sessionID
-	agora := time.Now()
 	assinatura.DataUltimaCobranca = &agora
-
-	// Calcular próxima cobrança baseado no plano
-	intervaloMeses := enums.ObterIntervaloCobranca(plano)
-	proximaCobranca := agora.AddDate(0, intervaloMeses, 0)
 	assinatura.DataProximaCobranca = &proximaCobranca
+	assinatura.ValorMensal = valor
 
 	// Salvar assinatura
 	return s.assinaturaRepo.Atualizar(assinatura)
