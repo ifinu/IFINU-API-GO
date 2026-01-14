@@ -75,14 +75,9 @@ func (s *AgendadorServico) Iniciar() {
 		s.EnviarNotificacoesVencimento()
 	})
 
-	// Processar notificações pendentes - executa a cada hora durante horário comercial
-	s.cron.AddFunc("0 * * * *", func() {
-		agora := time.Now()
-		if s.horarioComercial.EstaDentroHorarioComercial(agora) {
-			log.Println("⏰ Executando job: Processar notificações pendentes (horário comercial)")
-			s.ProcessarNotificacoesPendentes()
-		}
-	})
+	// REMOVIDO: Job de processar pendentes causava duplicação de mensagens
+	// As notificações já são enviadas pelos jobs específicos às 9h
+	// Se precisar reprocessar, implementar com lock distribuído no Redis
 
 	// Verificar cobranças vencidas - executa todos os dias às 23h
 	s.cron.AddFunc("0 23 * * *", func() {
