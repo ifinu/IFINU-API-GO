@@ -1,5 +1,7 @@
 package enums
 
+import "os"
+
 type PlanoAssinatura string
 
 const (
@@ -47,5 +49,20 @@ func ObterDescricaoPlano(plano PlanoAssinatura) string {
 		return "Plano Anual - R$ 348 (R$ 29/mês) - Economize 25%"
 	default:
 		return "Plano Mensal"
+	}
+}
+
+// ObterStripePriceID retorna o Price ID do Stripe para cada plano
+// Estes IDs devem ser criados no Stripe Dashboard e configurados nas variáveis de ambiente
+func ObterStripePriceID(plano PlanoAssinatura) string {
+	switch plano {
+	case PlanoMensal:
+		return os.Getenv("STRIPE_PRICE_ID_MENSAL")
+	case PlanoTrimestral:
+		return os.Getenv("STRIPE_PRICE_ID_TRIMESTRAL")
+	case PlanoAnual:
+		return os.Getenv("STRIPE_PRICE_ID_ANUAL")
+	default:
+		return os.Getenv("STRIPE_PRICE_ID_MENSAL")
 	}
 }

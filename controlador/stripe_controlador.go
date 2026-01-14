@@ -109,21 +109,26 @@ func (ctrl *StripeControlador) WebhookStripe(c *gin.Context) {
 		return
 	}
 
-	// Processar apenas eventos de checkout concluído
-	if eventType == "checkout.session.completed" {
-		data, ok := payload["data"].(map[string]interface{})
-		if !ok {
-			util.RespostaErro(c, http.StatusBadRequest, "Dados do evento inválidos", nil)
-			return
-		}
+	// Processar eventos do Stripe
+	data, ok := payload["data"].(map[string]interface{})
+	if !ok {
+		util.RespostaErro(c, http.StatusBadRequest, "Dados do evento inválidos", nil)
+		return
+	}
 
-		object, ok := data["object"].(map[string]interface{})
-		if !ok {
-			util.RespostaErro(c, http.StatusBadRequest, "Objeto do evento inválido", nil)
-			return
-		}
+	object, ok := data["object"].(map[string]interface{})
+	if !ok {
+		util.RespostaErro(c, http.StatusBadRequest, "Objeto do evento inválido", nil)
+		return
+	}
 
+	var err error
+
+	switch eventType {
+	case "checkout.session.completed":
+		// Cliente completou o checkout e iniciou trial ou pagamento
 		sessionID, _ := object["id"].(string)
+		subscriptionID, _ := object["subscription"].(string)
 		metadata, _ := object["metadata"].(map[string]interface{})
 
 		// Converter metadata para map[string]string
@@ -134,12 +139,33 @@ func (ctrl *StripeControlador) WebhookStripe(c *gin.Context) {
 			}
 		}
 
-		// Processar pagamento
-		err := ctrl.stripeServico.ProcessarPagamentoWebhook(sessionID, metadataStr)
-		if err != nil {
-			util.RespostaErro(c, http.StatusInternalServerError, "Erro ao processar webhook", err)
-			return
-		}
+		err = ctrl.stripeServico.ProcessarCheckoutWebhook(sessionID, subscriptionID, metadataStr)
+
+	case "customer.subscription.created":
+		// Subscription criada (trial começou)
+		subscriptionID, _ := object["id"].(string)
+		customerID, _ := object["customer"].(string)
+		status, _ := object["status"].(string)
+
+		err = ctrl.stripeServico.ProcessarSubscriptionCriada(subscriptionID, customerID, status)
+
+	case "customer.subscription.updated":
+		// Subscription atualizada (trial terminou, pagamento feito, etc)
+		subscriptionID, _ := object["id"].(string)
+		status, _ := object["status"].(string)
+
+		err = ctrl.stripeServico.ProcessarSubscriptionAtualizada(subscriptionID, status)
+
+	case "customer.subscription.deleted":
+		// Subscription cancelada
+		subscriptionID, _ := object["id"].(string)
+
+		err = ctrl.stripeServico.ProcessarSubscriptionCancelada(subscriptionID)
+	}
+
+	if err != nil {
+		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao processar webhook", err)
+		return
 	}
 
 	util.RespostaSucesso(c, "Webhook processado com sucesso", nil)

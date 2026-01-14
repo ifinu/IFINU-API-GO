@@ -33,6 +33,8 @@ type AssinaturaUsuario struct {
 	Currency                   string                   `gorm:"type:varchar(3);default:'BRL'" json:"currency"`
 	Country                    string                   `gorm:"type:varchar(2);default:'BR'" json:"country"`
 	AbacateCustomerID          string                   `gorm:"type:varchar(255)" json:"abacateCustomerId"`
+	StripeCustomerID           string                   `gorm:"type:varchar(255)" json:"stripeCustomerId"`
+	StripeSubscriptionID       string                   `gorm:"type:varchar(255)" json:"stripeSubscriptionId"`
 	UltimaTransacaoID          string                   `gorm:"type:varchar(255)" json:"ultimaTransacaoId"`
 	TentativasCobranca         int                      `gorm:"type:integer;default:0" json:"tentativasCobranca"`
 	DiasTolerancia             int                      `gorm:"type:integer;default:3" json:"diasTolerancia"`

@@ -34,10 +34,20 @@ func (r *AssinaturaRepositorio) BuscarPorID(id int64) (*entidades.AssinaturaUsua
 	return &assinatura, nil
 }
 
-// BuscarPorStripeSubscriptionID encontra uma assinatura pelo ID do Stripe
-func (r *AssinaturaRepositorio) BuscarPorStripeSubscriptionID(stripeID string) (*entidades.AssinaturaUsuario, error) {
+// BuscarPorStripeSubscriptionID encontra uma assinatura pelo Stripe Subscription ID
+func (r *AssinaturaRepositorio) BuscarPorStripeSubscriptionID(subscriptionID string) (*entidades.AssinaturaUsuario, error) {
 	var assinatura entidades.AssinaturaUsuario
-	err := r.db.Where("stripe_subscription_id = ?", stripeID).First(&assinatura).Error
+	err := r.db.Where("stripe_subscription_id = ?", subscriptionID).First(&assinatura).Error
+	if err != nil {
+		return nil, err
+	}
+	return &assinatura, nil
+}
+
+// BuscarPorStripeCustomerID encontra uma assinatura pelo Stripe Customer ID
+func (r *AssinaturaRepositorio) BuscarPorStripeCustomerID(customerID string) (*entidades.AssinaturaUsuario, error) {
+	var assinatura entidades.AssinaturaUsuario
+	err := r.db.Where("stripe_customer_id = ?", customerID).First(&assinatura).Error
 	if err != nil {
 		return nil, err
 	}

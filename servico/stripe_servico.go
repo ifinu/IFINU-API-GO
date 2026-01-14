@@ -108,7 +108,7 @@ func (s *StripeServico) CriarCheckoutSession(req *dto.CreateCheckoutRequest) (*d
 	}, nil
 }
 
-// CriarCheckoutAssinatura cria uma sessão de checkout Stripe para assinatura
+// CriarCheckoutAssinatura cria uma sessão de checkout Stripe para assinatura recorrente
 func (s *StripeServico) CriarCheckoutAssinatura(usuarioID uuid.UUID, req dto.CheckoutAssinaturaRequest) (*dto.CheckoutAssinaturaResponse, error) {
 	// Verificar se usuário existe
 	usuario, err := s.usuarioRepo.BuscarPorID(usuarioID)
@@ -116,28 +116,29 @@ func (s *StripeServico) CriarCheckoutAssinatura(usuarioID uuid.UUID, req dto.Che
 		return nil, fmt.Errorf("usuário não encontrado: %w", err)
 	}
 
-	// Obter valor do plano
-	valor := enums.ObterValorPlano(req.PlanoAssinatura)
-	valorCentavos := int64(valor * 100)
+	// Obter Price ID do Stripe para o plano escolhido
+	priceID := enums.ObterStripePriceID(req.PlanoAssinatura)
+	if priceID == "" {
+		return nil, fmt.Errorf("Price ID não configurado para o plano %s. Configure a variável de ambiente STRIPE_PRICE_ID_%s", req.PlanoAssinatura, req.PlanoAssinatura)
+	}
 
-	// Criar parâmetros da sessão
+	// Obter valor do plano (para retornar na resposta)
+	valor := enums.ObterValorPlano(req.PlanoAssinatura)
+
+	// Criar parâmetros da sessão de SUBSCRIPTION com trial de 14 dias
 	params := &stripe.CheckoutSessionParams{
-		PaymentMethodTypes: stripe.StringSlice([]string{"card", "boleto"}),
-		Mode:               stripe.String(string(stripe.CheckoutSessionModePayment)),
+		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
+		Mode:               stripe.String(string(stripe.CheckoutSessionModeSubscription)),
 		SuccessURL:         stripe.String(req.SuccessURL),
 		CancelURL:          stripe.String(req.CancelURL),
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
-				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-					Currency: stripe.String("brl"),
-					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
-						Name:        stripe.String(fmt.Sprintf("IFINU - Assinatura %s", req.PlanoAssinatura)),
-						Description: stripe.String(enums.ObterDescricaoPlano(req.PlanoAssinatura)),
-					},
-					UnitAmount: stripe.Int64(valorCentavos),
-				},
+				Price:    stripe.String(priceID),
 				Quantity: stripe.Int64(1),
 			},
+		},
+		SubscriptionData: &stripe.CheckoutSessionSubscriptionDataParams{
+			TrialPeriodDays: stripe.Int64(14),
 		},
 	}
 
@@ -151,7 +152,6 @@ func (s *StripeServico) CriarCheckoutAssinatura(usuarioID uuid.UUID, req dto.Che
 		"tipo":             "assinatura_ifinu",
 		"usuario_id":       usuarioID.String(),
 		"plano_assinatura": string(req.PlanoAssinatura),
-		"valor":            fmt.Sprintf("%.2f", valor),
 	}
 
 	// Criar sessão no Stripe
@@ -206,7 +206,136 @@ func (s *StripeServico) ListarPlanos() dto.ListarPlanosResponse {
 	return dto.ListarPlanosResponse{Planos: planos}
 }
 
-// ProcessarPagamentoWebhook processa o webhook de pagamento confirmado
+// ProcessarCheckoutWebhook processa o webhook quando checkout é concluído
+func (s *StripeServico) ProcessarCheckoutWebhook(sessionID, subscriptionID string, metadata map[string]string) error {
+	// Extrair informações do metadata
+	usuarioIDStr := metadata["usuario_id"]
+	planoStr := metadata["plano_assinatura"]
+
+	if usuarioIDStr == "" || planoStr == "" {
+		return fmt.Errorf("metadata incompleto no webhook")
+	}
+
+	usuarioID, err := uuid.Parse(usuarioIDStr)
+	if err != nil {
+		return fmt.Errorf("usuario_id inválido: %w", err)
+	}
+
+	plano := enums.PlanoAssinatura(planoStr)
+
+	// Buscar ou criar assinatura do usuário
+	assinatura, err := s.assinaturaRepo.BuscarPorUsuario(usuarioID)
+
+	agora := time.Now()
+	intervaloMeses := enums.ObterIntervaloCobranca(plano)
+	proximaCobranca := agora.AddDate(0, intervaloMeses, 0).Add(14 * 24 * time.Hour) // Adiciona os 14 dias de trial
+	valor := enums.ObterValorPlano(plano)
+
+	if err != nil {
+		// Assinatura não existe, criar uma nova
+		novaAssinatura := &entidades.AssinaturaUsuario{
+			UsuarioID:            usuarioID,
+			Status:               entidades.StatusPeriodoGratuito, // Começa em trial
+			PlanoAssinatura:      plano,
+			DataUltimaCobranca:   nil, // Trial não cobra ainda
+			DataProximaCobranca:  &proximaCobranca,
+			ValorMensal:          valor,
+			Currency:             "BRL",
+			Country:              "BR",
+			UltimaTransacaoID:    sessionID,
+			StripeSubscriptionID: subscriptionID,
+		}
+
+		return s.assinaturaRepo.Criar(novaAssinatura)
+	}
+
+	// Assinatura existe, atualizar
+	assinatura.Status = entidades.StatusPeriodoGratuito
+	assinatura.PlanoAssinatura = plano
+	assinatura.UltimaTransacaoID = sessionID
+	assinatura.DataProximaCobranca = &proximaCobranca
+	assinatura.ValorMensal = valor
+	assinatura.StripeSubscriptionID = subscriptionID
+
+	return s.assinaturaRepo.Atualizar(assinatura)
+}
+
+// ProcessarSubscriptionCriada processa quando subscription é criada no Stripe
+func (s *StripeServico) ProcessarSubscriptionCriada(subscriptionID, customerID, status string) error {
+	// Buscar assinatura por subscription ID
+	assinatura, err := s.assinaturaRepo.BuscarPorStripeSubscriptionID(subscriptionID)
+	if err != nil {
+		// Se não encontrou por subscription ID, buscar por customer ID
+		assinatura, err = s.assinaturaRepo.BuscarPorStripeCustomerID(customerID)
+		if err != nil {
+			return fmt.Errorf("assinatura não encontrada: %w", err)
+		}
+	}
+
+	// Atualizar com os IDs do Stripe
+	assinatura.StripeSubscriptionID = subscriptionID
+	assinatura.StripeCustomerID = customerID
+
+	// Status no Stripe pode ser: trialing, active, past_due, canceled, etc
+	if status == "trialing" {
+		assinatura.Status = entidades.StatusPeriodoGratuito
+	} else if status == "active" {
+		assinatura.Status = entidades.StatusAtiva
+	}
+
+	return s.assinaturaRepo.Atualizar(assinatura)
+}
+
+// ProcessarSubscriptionAtualizada processa quando subscription é atualizada
+func (s *StripeServico) ProcessarSubscriptionAtualizada(subscriptionID, status string) error {
+	assinatura, err := s.assinaturaRepo.BuscarPorStripeSubscriptionID(subscriptionID)
+	if err != nil {
+		return fmt.Errorf("assinatura não encontrada: %w", err)
+	}
+
+	// Atualizar status baseado no status do Stripe
+	switch status {
+	case "active":
+		assinatura.Status = entidades.StatusAtiva
+		// Atualizar data de última cobrança
+		agora := time.Now()
+		assinatura.DataUltimaCobranca = &agora
+
+		// Calcular próxima cobrança
+		intervaloMeses := enums.ObterIntervaloCobranca(assinatura.PlanoAssinatura)
+		proximaCobranca := agora.AddDate(0, intervaloMeses, 0)
+		assinatura.DataProximaCobranca = &proximaCobranca
+
+	case "past_due":
+		assinatura.Status = entidades.StatusPendentePagamento
+
+	case "canceled":
+		assinatura.Status = entidades.StatusCancelada
+		agora := time.Now()
+		assinatura.DataCancelamento = &agora
+
+	case "unpaid":
+		assinatura.Status = entidades.StatusBloqueada
+	}
+
+	return s.assinaturaRepo.Atualizar(assinatura)
+}
+
+// ProcessarSubscriptionCancelada processa quando subscription é cancelada
+func (s *StripeServico) ProcessarSubscriptionCancelada(subscriptionID string) error {
+	assinatura, err := s.assinaturaRepo.BuscarPorStripeSubscriptionID(subscriptionID)
+	if err != nil {
+		return fmt.Errorf("assinatura não encontrada: %w", err)
+	}
+
+	assinatura.Status = entidades.StatusCancelada
+	agora := time.Now()
+	assinatura.DataCancelamento = &agora
+
+	return s.assinaturaRepo.Atualizar(assinatura)
+}
+
+// ProcessarPagamentoWebhook processa o webhook de pagamento confirmado (método legado)
 func (s *StripeServico) ProcessarPagamentoWebhook(sessionID string, metadata map[string]string) error {
 	// Extrair informações do metadata
 	usuarioIDStr := metadata["usuario_id"]
