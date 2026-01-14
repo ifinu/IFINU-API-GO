@@ -36,3 +36,21 @@ func (ctrl *AssinaturaControlador) Status(c *gin.Context) {
 
 	util.RespostaSucesso(c, "Status da assinatura obtido com sucesso", status)
 }
+
+// Cancelar cancela a assinatura do usuário
+// POST /api/assinaturas/cancelar
+func (ctrl *AssinaturaControlador) Cancelar(c *gin.Context) {
+	email, exists := middleware.ObterEmailUsuario(c)
+	if !exists {
+		util.RespostaErro(c, http.StatusUnauthorized, "Usuário não autenticado", nil)
+		return
+	}
+
+	err := ctrl.assinaturaServico.CancelarAssinatura(email)
+	if err != nil {
+		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao cancelar assinatura", err)
+		return
+	}
+
+	util.RespostaSucesso(c, "Assinatura cancelada com sucesso", nil)
+}

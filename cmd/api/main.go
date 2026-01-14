@@ -230,6 +230,7 @@ func main() {
 				assinaturas.GET("/status", assinaturaController.Status)
 				assinaturas.GET("/planos", stripeController.ListarPlanos)
 				assinaturas.POST("/checkout", stripeController.CriarCheckoutAssinatura)
+				assinaturas.POST("/cancelar", assinaturaController.Cancelar)
 			}
 
 			// Rotas de relatórios

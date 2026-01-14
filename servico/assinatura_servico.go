@@ -40,7 +40,29 @@ func (s *AssinaturaServico) ObterStatus(email string) (map[string]interface{}, e
 		status["status"] = assinatura.Status
 		status["dataProximaCobranca"] = assinatura.DataProximaCobranca
 		status["valorMensal"] = assinatura.ValorMensal
+		status["planoAssinatura"] = assinatura.PlanoAssinatura
+		status["dataCancelamento"] = assinatura.DataCancelamento
 	}
 
 	return status, nil
+}
+
+// CancelarAssinatura cancela a assinatura do usuário
+func (s *AssinaturaServico) CancelarAssinatura(email string) error {
+	usuario, err := s.usuarioRepo.BuscarPorEmail(email)
+	if err != nil {
+		return err
+	}
+
+	// Buscar assinatura do usuário
+	assinatura, err := s.assinaturaRepo.BuscarPorUsuario(usuario.ID)
+	if err != nil {
+		return err
+	}
+
+	// Cancelar assinatura
+	assinatura.Cancelar()
+
+	// Salvar alterações
+	return s.assinaturaRepo.Atualizar(assinatura)
 }
