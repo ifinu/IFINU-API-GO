@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/ifinu/ifinu-api-go/dominio/entidades"
 	"github.com/ifinu/ifinu-api-go/dto"
 	"github.com/ifinu/ifinu-api-go/repositorio"
 	"github.com/stripe/stripe-go/v81"
