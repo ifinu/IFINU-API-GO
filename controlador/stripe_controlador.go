@@ -41,7 +41,7 @@ func (ctrl *StripeControlador) CreateCheckout(c *gin.Context) {
 // CreateCheckoutSession cria uma sessão de checkout Stripe completa
 // POST /api/stripe-connect/create-checkout-session
 func (ctrl *StripeControlador) CreateCheckoutSession(c *gin.Context) {
-	_, exists := middleware.ObterUsuarioID(c)
+	usuarioID, exists := middleware.ObterUsuarioID(c)
 	if !exists {
 		util.RespostaErro(c, http.StatusUnauthorized, "Usuário não autenticado", nil)
 		return
@@ -53,7 +53,7 @@ func (ctrl *StripeControlador) CreateCheckoutSession(c *gin.Context) {
 		return
 	}
 
-	resultado, err := ctrl.stripeServico.CriarCheckoutSession(&req)
+	resultado, err := ctrl.stripeServico.CriarCheckoutSession(usuarioID, &req)
 	if err != nil {
 		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao criar sessão de checkout", err)
 		return

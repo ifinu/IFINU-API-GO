@@ -18,9 +18,13 @@ type Usuario struct {
 	SenhaHash              string     `gorm:"type:varchar(255);not null" json:"-"`
 	Ativo                  bool       `gorm:"default:true" json:"ativo"`
 	EmailVerificado        bool       `gorm:"default:false" json:"emailVerificado"`
-	Vitalicio              bool       `gorm:"default:false" json:"vitalicio"`
-	StripeAccountID        string     `gorm:"type:varchar(255)" json:"stripeAccountId"`
-	DuasEtapasAtivo        bool       `gorm:"default:false" json:"duasEtapasAtivo"`
+	Vitalicio                  bool       `gorm:"default:false" json:"vitalicio"`
+	StripeAccountID            string     `gorm:"type:varchar(255)" json:"stripeAccountId"`
+	StripeOnboardingCompleto   bool       `gorm:"default:false" json:"stripeOnboardingCompleto"`
+	StripeChargesHabilitado    bool       `gorm:"default:false" json:"stripeChargesHabilitado"`
+	StripeDetalhesSubmetidos   bool       `gorm:"default:false" json:"stripeDetalhesSubmetidos"`
+	StripeDataOnboarding       *time.Time `gorm:"type:timestamp" json:"stripeDataOnboarding"`
+	DuasEtapasAtivo            bool       `gorm:"default:false" json:"duasEtapasAtivo"`
 	DuasEtapasSecret       string     `gorm:"type:varchar(255)" json:"-"`
 	CodigosRecuperacao2FA  string     `gorm:"column:codigos_recuperacao_2fa;type:text" json:"-"`
 	DataAtivacao2FA        *time.Time `gorm:"column:data_ativacao_2fa;type:timestamp" json:"dataAtivacao2FA"`

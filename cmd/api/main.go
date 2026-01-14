@@ -57,6 +57,7 @@ func main() {
 	relatorioServico := servico.NovoRelatorioServico(clienteRepo, cobrancaRepo)
 	stripeServico := servico.NovoStripeServico(usuarioRepo, assinaturaRepo)
 	stripeConfigServico := servico.NovoStripeConfigServico(stripeConfigRepo)
+	stripeConnectServico := servico.NovoStripeConnectServico(usuarioRepo)
 
 	// Inicializar e iniciar agendador
 	redisAddr := viper.GetString("REDIS_ADDR")
@@ -75,6 +76,7 @@ func main() {
 	relatorioController := controlador.NovoRelatorioControlador(relatorioServico)
 	stripeController := controlador.NovoStripeControlador(stripeServico)
 	stripeConfigController := controlador.NovoStripeConfigControlador(stripeConfigServico)
+	stripeConnectController := controlador.NovoStripeConnectControlador(stripeConnectServico)
 
 	// Configurar Gin
 	if viper.GetString("APP_ENV") == "production" {
@@ -146,8 +148,9 @@ func main() {
 	// Grupo de rotas API
 	api := r.Group("/api")
 	{
-		// Webhook Stripe (público - sem autenticação)
+		// Webhooks Stripe (público - sem autenticação)
 		api.POST("/stripe/webhook", stripeController.WebhookStripe)
+		api.POST("/stripe-connect/webhook", stripeConnectController.WebhookAccountUpdated)
 
 		// Rotas de autenticação (públicas)
 		auth := api.Group("/auth")
@@ -181,6 +184,16 @@ func main() {
 				stripeConfig.POST("/config", stripeConfigController.SalvarConfiguracao)
 				stripeConfig.DELETE("/config", stripeConfigController.DeletarConfiguracao)
 				stripeConfig.POST("/test-connection", stripeConfigController.TestarConexao)
+			}
+
+			// Rotas de Stripe Connect (sem exigir assinatura ativa)
+			stripeConnect := autenticado.Group("/stripe-connect")
+			{
+				stripeConnect.POST("/criar-conta", stripeConnectController.CriarContaConnect)
+				stripeConnect.GET("/status", stripeConnectController.ObterStatus)
+				stripeConnect.POST("/refresh-onboarding", stripeConnectController.RefreshOnboarding)
+				stripeConnect.GET("/dashboard-link", stripeConnectController.GerarDashboardLink)
+				stripeConnect.DELETE("/desconectar", stripeConnectController.Desconectar)
 			}
 		}
 

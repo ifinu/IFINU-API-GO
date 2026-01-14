@@ -49,7 +49,24 @@ func (s *StripeServico) CriarCheckoutTrial(usuarioID uuid.UUID) (*dto.CreateChec
 }
 
 // CriarCheckoutSession cria uma sessão de checkout Stripe com dados completos
-func (s *StripeServico) CriarCheckoutSession(req *dto.CreateCheckoutRequest) (*dto.CreateCheckoutResponse, error) {
+// IMPORTANTE: Usa Stripe Connect - dinheiro vai para conta conectada do usuário
+func (s *StripeServico) CriarCheckoutSession(usuarioID uuid.UUID, req *dto.CreateCheckoutRequest) (*dto.CreateCheckoutResponse, error) {
+	// Buscar usuário e verificar se tem conta Stripe Connect
+	usuario, err := s.usuarioRepo.BuscarPorID(usuarioID)
+	if err != nil {
+		return nil, fmt.Errorf("usuário não encontrado: %w", err)
+	}
+
+	// Verificar se usuário tem conta conectada
+	if usuario.StripeAccountID == "" {
+		return nil, fmt.Errorf("usuário não possui conta Stripe Connect configurada. Configure em Configurações > Pagamentos")
+	}
+
+	// Verificar se onboarding está completo
+	if !usuario.StripeOnboardingCompleto {
+		return nil, fmt.Errorf("conta Stripe Connect ainda não está pronta para receber pagamentos. Complete o cadastro no Stripe")
+	}
+
 	// Calcular valores
 	taxaPercentual := 1.0 // 1% de taxa
 	taxaPlataforma := req.Valor * taxaPercentual / 100
@@ -79,6 +96,9 @@ func (s *StripeServico) CriarCheckoutSession(req *dto.CreateCheckoutRequest) (*d
 		},
 	}
 
+	// CRÍTICO: Usar conta conectada do usuário (dinheiro vai para ele)
+	params.SetStripeAccount(usuario.StripeAccountID)
+
 	// Adicionar email do cliente se fornecido
 	if req.ClienteEmail != "" {
 		params.CustomerEmail = stripe.String(req.ClienteEmail)
@@ -89,6 +109,7 @@ func (s *StripeServico) CriarCheckoutSession(req *dto.CreateCheckoutRequest) (*d
 		"cobranca_id":   req.CobrancaID,
 		"cliente_nome":  req.ClienteNome,
 		"cliente_email": req.ClienteEmail,
+		"usuario_id":    usuarioID.String(),
 	}
 
 	// Criar sessão no Stripe

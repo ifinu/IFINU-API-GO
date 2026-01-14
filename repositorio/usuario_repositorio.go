@@ -78,3 +78,13 @@ func (r *UsuarioRepositorio) BuscarUsuariosComAssinaturaAtiva() ([]entidades.Usu
 		Find(&usuarios).Error
 	return usuarios, err
 }
+
+// BuscarPorStripeAccountID encontra um usuário pelo Stripe Account ID
+func (r *UsuarioRepositorio) BuscarPorStripeAccountID(accountID string) (*entidades.Usuario, error) {
+	var usuario entidades.Usuario
+	err := r.db.Where("stripe_account_id = ?", accountID).First(&usuario).Error
+	if err != nil {
+		return nil, err
+	}
+	return &usuario, nil
+}
