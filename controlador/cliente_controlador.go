@@ -2,9 +2,9 @@ package controlador
 
 import (
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/ifinu/ifinu-api-go/dto"
 	"github.com/ifinu/ifinu-api-go/middleware"
 	"github.com/ifinu/ifinu-api-go/servico"
