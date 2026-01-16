@@ -191,6 +191,7 @@ func main() {
 			{
 				stripeConnect.POST("/criar-conta", stripeConnectController.CriarContaConnect)
 				stripeConnect.GET("/status", stripeConnectController.ObterStatus)
+				stripeConnect.GET("/account-status", stripeConnectController.ObterStatus)
 				stripeConnect.POST("/refresh-onboarding", stripeConnectController.RefreshOnboarding)
 				stripeConnect.GET("/dashboard-link", stripeConnectController.GerarDashboardLink)
 				stripeConnect.DELETE("/desconectar", stripeConnectController.Desconectar)
