@@ -319,8 +319,17 @@ func (s *WhatsAppServico) ObterQRCode(usuarioID uuid.UUID) (map[string]interface
 		return nil, err
 	}
 
-	// Se não está conectado e tem QR code, retornar
-	if !conexao.IsConectado() && conexao.QRCode != "" {
+	// Se já está conectado
+	if conexao.IsConectado() {
+		return map[string]interface{}{
+			"conectado":     true,
+			"nomeInstancia": conexao.InstanceName,
+			"dataConexao":   conexao.DataConexao,
+		}, nil
+	}
+
+	// Se tem QR code no banco, retornar
+	if conexao.QRCode != "" {
 		return map[string]interface{}{
 			"qrcode":        conexao.QRCode,
 			"nomeInstancia": conexao.InstanceName,
@@ -328,12 +337,18 @@ func (s *WhatsAppServico) ObterQRCode(usuarioID uuid.UUID) (map[string]interface
 		}, nil
 	}
 
-	// Se já está conectado
-	if conexao.IsConectado() {
+	// QR Code vazio no banco - buscar direto da Evolution API
+	// (Evolution API v2.2+ gera QR Code de forma assíncrona)
+	qrcode, err := s.evolutionAPI.ObterQRCode(conexao.InstanceName)
+	if err == nil && qrcode != "" {
+		// Salvar no banco para próximas consultas
+		conexao.QRCode = qrcode
+		s.whatsappRepo.Atualizar(conexao)
+
 		return map[string]interface{}{
-			"conectado":     true,
+			"qrcode":        qrcode,
 			"nomeInstancia": conexao.InstanceName,
-			"dataConexao":   conexao.DataConexao,
+			"status":        conexao.Status,
 		}, nil
 	}
 
