@@ -12,35 +12,29 @@ jobs:
     runs-on: self-hosted
 
     steps:
-      - name: Checkout código
+      - name: Deploy API
         run: |
-          echo "📥 Atualizando código no VPS..."
+          echo "📥 Atualizando código e fazendo deploy..."
           cd /opt/ifinu/api
           git fetch origin
           git reset --hard origin/main
           git pull origin main
 
-      - name: Deploy via Docker Compose
-        run: |
-          echo "🔨 Rebuilding e reiniciando API..."
+          echo "🔨 Rebuilding API..."
           cd /opt/ifinu
           docker compose build api
+
+          echo "🚀 Reiniciando API..."
           docker compose up -d api
 
-      - name: Aguardar inicialização
-        run: |
-          echo "⏳ Aguardando API inicializar..."
+          echo "⏳ Aguardando inicialização..."
           sleep 10
 
-      - name: Health check
-        run: |
           echo "💚 Testando health check..."
           curl -f http://localhost:8080/health || exit 1
+
+          echo "📋 Logs da API:"
+          docker logs --tail 20 ifinu-api
+
           echo ""
           echo "✅ Deploy successful!"
-
-      - name: Show logs
-        if: always()
-        run: |
-          echo "📋 Últimos logs da API:"
-          docker logs --tail 20 ifinu-api
