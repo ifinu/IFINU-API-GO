@@ -526,8 +526,6 @@ func converterNomePlano(plano enums.PlanoAssinatura) string {
 		return "Plano Trimestral"
 	case enums.PlanoAnual:
 		return "Plano Anual"
-	case enums.PlanoVitalicio:
-		return "Plano Vitalício"
 	default:
 		return "Plano IFINU"
 	}
