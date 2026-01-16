@@ -170,3 +170,39 @@ func (ctrl *StripeControlador) WebhookStripe(c *gin.Context) {
 
 	util.RespostaSucesso(c, "Webhook processado com sucesso", nil)
 }
+
+// BuscarHistoricoFaturas busca o histórico de faturas do usuário
+// GET /api/assinaturas/historico
+func (ctrl *StripeControlador) BuscarHistoricoFaturas(c *gin.Context) {
+	usuarioID, exists := middleware.ObterUsuarioID(c)
+	if !exists {
+		util.RespostaErro(c, http.StatusUnauthorized, "Usuário não autenticado", nil)
+		return
+	}
+
+	resultado, err := ctrl.stripeServico.BuscarHistoricoFaturas(usuarioID)
+	if err != nil {
+		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao buscar histórico", err)
+		return
+	}
+
+	util.RespostaSucesso(c, "Histórico obtido com sucesso", resultado)
+}
+
+// BuscarDetalhesAssinatura retorna detalhes completos da assinatura
+// GET /api/assinaturas/detalhes
+func (ctrl *StripeControlador) BuscarDetalhesAssinatura(c *gin.Context) {
+	usuarioID, exists := middleware.ObterUsuarioID(c)
+	if !exists {
+		util.RespostaErro(c, http.StatusUnauthorized, "Usuário não autenticado", nil)
+		return
+	}
+
+	resultado, err := ctrl.stripeServico.BuscarDetalhesAssinatura(usuarioID)
+	if err != nil {
+		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao buscar detalhes", err)
+		return
+	}
+
+	util.RespostaSucesso(c, "Detalhes obtidos com sucesso", resultado)
+}

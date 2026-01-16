@@ -12,6 +12,7 @@ import (
 	"github.com/ifinu/ifinu-api-go/repositorio"
 	"github.com/stripe/stripe-go/v81"
 	"github.com/stripe/stripe-go/v81/checkout/session"
+	"github.com/stripe/stripe-go/v81/invoice"
 )
 
 type StripeServico struct {
@@ -408,4 +409,145 @@ func (s *StripeServico) ProcessarPagamentoWebhook(sessionID string, metadata map
 
 	// Salvar assinatura
 	return s.assinaturaRepo.Atualizar(assinatura)
+}
+
+// BuscarHistoricoFaturas busca o histórico de faturas do Stripe
+func (s *StripeServico) BuscarHistoricoFaturas(usuarioID uuid.UUID) (*dto.HistoricoFaturasResponse, error) {
+	// Buscar assinatura do usuário
+	assinatura, err := s.assinaturaRepo.BuscarPorUsuario(usuarioID)
+	if err != nil {
+		return &dto.HistoricoFaturasResponse{
+			Faturas: []dto.FaturaInfo{},
+		}, nil
+	}
+
+	// Se não tem customer ID do Stripe, retornar vazio
+	if assinatura.StripeCustomerID == "" {
+		return &dto.HistoricoFaturasResponse{
+			Faturas: []dto.FaturaInfo{},
+		}, nil
+	}
+
+	// Buscar invoices do Stripe
+	params := &stripe.InvoiceListParams{
+		Customer: stripe.String(assinatura.StripeCustomerID),
+	}
+	params.Limit = stripe.Int64(10)
+
+	faturas := []dto.FaturaInfo{}
+	i := invoice.List(params)
+
+	for i.Next() {
+		inv := i.Invoice()
+
+		fatura := dto.FaturaInfo{
+			ID:          inv.ID,
+			Data:        time.Unix(inv.Created, 0).Format("02/01/2006"),
+			Valor:       float64(inv.AmountPaid) / 100, // Converter de centavos para reais
+			Status:      converterStatusFatura(inv.Status),
+			URLPagamento: inv.HostedInvoiceURL,
+			URLPDF:      inv.InvoicePDF,
+		}
+
+		faturas = append(faturas, fatura)
+	}
+
+	if err := i.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao listar faturas: %w", err)
+	}
+
+	return &dto.HistoricoFaturasResponse{
+		Faturas: faturas,
+	}, nil
+}
+
+// BuscarDetalhesAssinatura retorna detalhes completos da assinatura
+func (s *StripeServico) BuscarDetalhesAssinatura(usuarioID uuid.UUID) (*dto.DetalhesAssinaturaResponse, error) {
+	// Buscar assinatura do usuário
+	assinatura, err := s.assinaturaRepo.BuscarPorUsuario(usuarioID)
+	if err != nil {
+		return nil, fmt.Errorf("assinatura não encontrada: %w", err)
+	}
+
+	// Montar resposta
+	response := &dto.DetalhesAssinaturaResponse{
+		PlanoNome:      converterNomePlano(assinatura.PlanoAssinatura),
+		PlanoDescricao: "Sistema de cobrança automática",
+		Status:         string(assinatura.Status),
+		StatusBadge:    converterStatusBadge(assinatura.Status),
+		ValorMensal:    assinatura.ValorMensal,
+		Moeda:          assinatura.Currency,
+	}
+
+	// Adicionar datas se disponíveis
+	if assinatura.DataProximaCobranca != nil {
+		proximaCobranca := assinatura.DataProximaCobranca.Format("02/01/2006")
+		response.ProximaCobranca = &proximaCobranca
+	}
+
+	if assinatura.DataUltimaCobranca != nil {
+		ultimaCobranca := assinatura.DataUltimaCobranca.Format("02/01/2006")
+		response.UltimaCobranca = &ultimaCobranca
+	}
+
+	// Calcular dias restantes de trial
+	if assinatura.Status == entidades.StatusPeriodoGratuito && assinatura.DataProximaCobranca != nil {
+		diasRestantes := int(time.Until(*assinatura.DataProximaCobranca).Hours() / 24)
+		if diasRestantes < 0 {
+			diasRestantes = 0
+		}
+		response.DiasRestantesTrial = &diasRestantes
+	}
+
+	return response, nil
+}
+
+// Funções auxiliares
+func converterStatusFatura(status stripe.InvoiceStatus) string {
+	switch status {
+	case stripe.InvoiceStatusPaid:
+		return "Pago"
+	case stripe.InvoiceStatusOpen:
+		return "Aberta"
+	case stripe.InvoiceStatusVoid:
+		return "Cancelada"
+	case stripe.InvoiceStatusUncollectible:
+		return "Não cobrável"
+	default:
+		return "Pendente"
+	}
+}
+
+func converterNomePlano(plano enums.PlanoAssinatura) string {
+	switch plano {
+	case enums.PlanoMensal:
+		return "Plano Mensal"
+	case enums.PlanoTrimestral:
+		return "Plano Trimestral"
+	case enums.PlanoAnual:
+		return "Plano Anual"
+	case enums.PlanoVitalicio:
+		return "Plano Vitalício"
+	default:
+		return "Plano IFINU"
+	}
+}
+
+func converterStatusBadge(status entidades.StatusAssinatura) string {
+	switch status {
+	case entidades.StatusAtiva:
+		return "success"
+	case entidades.StatusPeriodoGratuito:
+		return "info"
+	case entidades.StatusPendentePagamento:
+		return "warning"
+	case entidades.StatusBloqueada:
+		return "error"
+	case entidades.StatusCancelada:
+		return "default"
+	case entidades.StatusVitalicia:
+		return "premium"
+	default:
+		return "default"
+	}
 }

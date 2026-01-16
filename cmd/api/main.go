@@ -246,6 +246,8 @@ func main() {
 				assinaturas.GET("/planos", stripeController.ListarPlanos)
 				assinaturas.POST("/checkout", stripeController.CriarCheckoutAssinatura)
 				assinaturas.POST("/cancelar", assinaturaController.Cancelar)
+				assinaturas.GET("/historico", stripeController.BuscarHistoricoFaturas)
+				assinaturas.GET("/detalhes", stripeController.BuscarDetalhesAssinatura)
 			}
 
 			// Rotas de relatórios

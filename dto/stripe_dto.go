@@ -24,3 +24,31 @@ type CreateCheckoutResponse struct {
 	StripeAccountID  string  `json:"stripeAccountId,omitempty"`
 	Status           string  `json:"status"`
 }
+
+// FaturaInfo representa informações de uma fatura
+type FaturaInfo struct {
+	ID           string  `json:"id"`
+	Data         string  `json:"data"`
+	Valor        float64 `json:"valor"`
+	Status       string  `json:"status"`
+	URLPagamento string  `json:"urlPagamento,omitempty"`
+	URLPDF       string  `json:"urlPdf,omitempty"`
+}
+
+// HistoricoFaturasResponse representa o histórico de faturas
+type HistoricoFaturasResponse struct {
+	Faturas []FaturaInfo `json:"faturas"`
+}
+
+// DetalhesAssinaturaResponse representa os detalhes completos da assinatura
+type DetalhesAssinaturaResponse struct {
+	PlanoNome          string   `json:"planoNome"`
+	PlanoDescricao     string   `json:"planoDescricao"`
+	Status             string   `json:"status"`
+	StatusBadge        string   `json:"statusBadge"`
+	ValorMensal        float64  `json:"valorMensal"`
+	Moeda              string   `json:"moeda"`
+	ProximaCobranca    *string  `json:"proximaCobranca,omitempty"`
+	UltimaCobranca     *string  `json:"ultimaCobranca,omitempty"`
+	DiasRestantesTrial *int     `json:"diasRestantesTrial,omitempty"`
+}
