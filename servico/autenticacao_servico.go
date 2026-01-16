@@ -271,6 +271,39 @@ func (s *AutenticacaoServico) ObterStatusTrial(email string) (map[string]interfa
 	}, nil
 }
 
+// AlterarSenha altera a senha do usuário
+func (s *AutenticacaoServico) AlterarSenha(email string, req dto.AlterarSenhaRequest) error {
+	// Verificar se nova senha e confirmação coincidem
+	if req.NovaSenha != req.ConfirmarSenha {
+		return errors.New("nova senha e confirmação não coincidem")
+	}
+
+	// Buscar usuário
+	usuario, err := s.usuarioRepo.BuscarPorEmail(email)
+	if err != nil {
+		return errors.New("usuário não encontrado")
+	}
+
+	// Verificar senha atual
+	if !util.VerificarSenha(req.SenhaAtual, usuario.SenhaHash) {
+		return errors.New("senha atual incorreta")
+	}
+
+	// Gerar hash da nova senha
+	novaSenhaHash, err := util.HashSenha(req.NovaSenha)
+	if err != nil {
+		return errors.New("erro ao processar nova senha")
+	}
+
+	// Atualizar senha
+	usuario.SenhaHash = novaSenhaHash
+	if err := s.usuarioRepo.Atualizar(usuario); err != nil {
+		return errors.New("erro ao atualizar senha")
+	}
+
+	return nil
+}
+
 // mapearUsuarioParaDTO converte Usuario para UsuarioResponse
 func (s *AutenticacaoServico) mapearUsuarioParaDTO(usuario *entidades.Usuario) dto.UsuarioResponse {
 	return dto.UsuarioResponse{

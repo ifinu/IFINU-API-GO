@@ -63,3 +63,10 @@ type GerarQRCode2FAResponse struct {
 	Secret    string `json:"secret"`
 	QRCodeURL string `json:"qrCodeUrl"`
 }
+
+// AlterarSenhaRequest representa a requisição para alterar senha
+type AlterarSenhaRequest struct {
+	SenhaAtual     string `json:"senhaAtual" binding:"required"`
+	NovaSenha      string `json:"novaSenha" binding:"required,min=6"`
+	ConfirmarSenha string `json:"confirmarSenha" binding:"required"`
+}

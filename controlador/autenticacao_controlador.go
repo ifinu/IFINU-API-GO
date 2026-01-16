@@ -173,3 +173,27 @@ func (ctrl *AutenticacaoControlador) StatusTrial(c *gin.Context) {
 
 	util.RespostaSucesso(c, "Status do trial obtido com sucesso", status)
 }
+
+// AlterarSenha altera a senha do usuário autenticado
+// POST /api/seguranca/alterar-senha
+func (ctrl *AutenticacaoControlador) AlterarSenha(c *gin.Context) {
+	email, exists := middleware.ObterEmailUsuario(c)
+	if !exists {
+		util.RespostaErro(c, http.StatusUnauthorized, "Usuário não autenticado", nil)
+		return
+	}
+
+	var req dto.AlterarSenhaRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		util.RespostaErro(c, http.StatusBadRequest, "Dados inválidos", err)
+		return
+	}
+
+	err := ctrl.autenticacaoServico.AlterarSenha(email, req)
+	if err != nil {
+		util.RespostaErro(c, http.StatusBadRequest, err.Error(), nil)
+		return
+	}
+
+	util.RespostaSucesso(c, "Senha alterada com sucesso", nil)
+}

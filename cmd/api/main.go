@@ -177,6 +177,12 @@ func main() {
 			// Rota de perfil (sem exigir assinatura ativa)
 			autenticado.GET("/perfil", autenticacaoController.Me)
 
+			// Rotas de segurança
+			seguranca := autenticado.Group("/seguranca")
+			{
+				seguranca.POST("/alterar-senha", autenticacaoController.AlterarSenha)
+			}
+
 			// Rotas de configuração Stripe (sem exigir assinatura ativa)
 			stripeConfig := autenticado.Group("/stripe")
 			{
