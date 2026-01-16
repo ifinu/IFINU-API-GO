@@ -70,7 +70,7 @@ func (r *CobrancaRepositorio) Atualizar(cobranca *entidades.Cobranca) error {
 }
 
 // Deletar remove uma cobrança (com validação de usuário)
-func (r *CobrancaRepositorio) Deletar(id int64, usuarioID uuid.UUID) error {
+func (r *CobrancaRepositorio) Deletar(id uuid.UUID, usuarioID uuid.UUID) error {
 	return r.db.Where("id = ? AND usuario_id = ?", id, usuarioID).Delete(&entidades.Cobranca{}).Error
 }
 
