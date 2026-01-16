@@ -18,7 +18,7 @@ func NovoCobrancaRepositorio(db *gorm.DB) *CobrancaRepositorio {
 }
 
 // BuscarPorID encontra uma cobrança pelo ID (com validação de usuário)
-func (r *CobrancaRepositorio) BuscarPorID(id int64, usuarioID uuid.UUID) (*entidades.Cobranca, error) {
+func (r *CobrancaRepositorio) BuscarPorID(id uuid.UUID, usuarioID uuid.UUID) (*entidades.Cobranca, error) {
 	var cobranca entidades.Cobranca
 	err := r.db.Preload("Cliente").
 		Where("cobrancas.id = ? AND cobrancas.usuario_id = ?", id, usuarioID).
@@ -40,7 +40,7 @@ func (r *CobrancaRepositorio) BuscarPorUsuario(usuarioID uuid.UUID) ([]entidades
 }
 
 // BuscarPorCliente retorna todas as cobranças de um cliente específico
-func (r *CobrancaRepositorio) BuscarPorCliente(clienteID int64, usuarioID uuid.UUID) ([]entidades.Cobranca, error) {
+func (r *CobrancaRepositorio) BuscarPorCliente(clienteID uuid.UUID, usuarioID uuid.UUID) ([]entidades.Cobranca, error) {
 	var cobrancas []entidades.Cobranca
 	err := r.db.Preload("Cliente").
 		Where("cliente_id = ? AND usuario_id = ?", clienteID, usuarioID).

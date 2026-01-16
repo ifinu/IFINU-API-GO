@@ -54,7 +54,7 @@ func (s *ClienteServico) Criar(usuarioID uuid.UUID, req dto.ClienteRequest) (*dt
 }
 
 // BuscarPorID busca um cliente por ID
-func (s *ClienteServico) BuscarPorID(usuarioID uuid.UUID, clienteID int64) (*dto.ClienteResponse, error) {
+func (s *ClienteServico) BuscarPorID(usuarioID uuid.UUID, clienteID uuid.UUID) (*dto.ClienteResponse, error) {
 	cliente, err := s.clienteRepo.BuscarPorID(clienteID, usuarioID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -113,7 +113,7 @@ func (s *ClienteServico) Buscar(usuarioID uuid.UUID, req dto.BuscarClientesReque
 }
 
 // Atualizar atualiza um cliente
-func (s *ClienteServico) Atualizar(usuarioID uuid.UUID, clienteID int64, req dto.ClienteRequest) (*dto.ClienteResponse, error) {
+func (s *ClienteServico) Atualizar(usuarioID uuid.UUID, clienteID uuid.UUID, req dto.ClienteRequest) (*dto.ClienteResponse, error) {
 	// Buscar cliente
 	cliente, err := s.clienteRepo.BuscarPorID(clienteID, usuarioID)
 	if err != nil {
@@ -146,7 +146,7 @@ func (s *ClienteServico) Atualizar(usuarioID uuid.UUID, clienteID int64, req dto
 }
 
 // Deletar remove um cliente
-func (s *ClienteServico) Deletar(usuarioID uuid.UUID, clienteID int64) error {
+func (s *ClienteServico) Deletar(usuarioID uuid.UUID, clienteID uuid.UUID) error {
 	// Verificar se cliente existe
 	_, err := s.clienteRepo.BuscarPorID(clienteID, usuarioID)
 	if err != nil {

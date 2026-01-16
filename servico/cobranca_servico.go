@@ -68,7 +68,7 @@ func (s *CobrancaServico) Criar(usuarioID uuid.UUID, req dto.CobrancaRequest) (*
 }
 
 // BuscarPorID busca uma cobrança por ID
-func (s *CobrancaServico) BuscarPorID(usuarioID uuid.UUID, cobrancaID int64) (*dto.CobrancaResponse, error) {
+func (s *CobrancaServico) BuscarPorID(usuarioID uuid.UUID, cobrancaID uuid.UUID) (*dto.CobrancaResponse, error) {
 	cobranca, err := s.cobrancaRepo.BuscarPorID(cobrancaID, usuarioID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -137,7 +137,7 @@ func (s *CobrancaServico) Buscar(usuarioID uuid.UUID, req dto.BuscarCobrancasReq
 }
 
 // Atualizar atualiza uma cobrança
-func (s *CobrancaServico) Atualizar(usuarioID uuid.UUID, cobrancaID int64, req dto.CobrancaRequest) (*dto.CobrancaResponse, error) {
+func (s *CobrancaServico) Atualizar(usuarioID uuid.UUID, cobrancaID uuid.UUID, req dto.CobrancaRequest) (*dto.CobrancaResponse, error) {
 	// Buscar cobrança
 	cobranca, err := s.cobrancaRepo.BuscarPorID(cobrancaID, usuarioID)
 	if err != nil {
@@ -172,7 +172,7 @@ func (s *CobrancaServico) Atualizar(usuarioID uuid.UUID, cobrancaID int64, req d
 }
 
 // AtualizarStatus atualiza o status de uma cobrança
-func (s *CobrancaServico) AtualizarStatus(usuarioID uuid.UUID, cobrancaID int64, novoStatus enums.StatusCobranca) (*dto.CobrancaResponse, error) {
+func (s *CobrancaServico) AtualizarStatus(usuarioID uuid.UUID, cobrancaID uuid.UUID, novoStatus enums.StatusCobranca) (*dto.CobrancaResponse, error) {
 	// Buscar cobrança
 	cobranca, err := s.cobrancaRepo.BuscarPorID(cobrancaID, usuarioID)
 	if err != nil {
@@ -200,7 +200,7 @@ func (s *CobrancaServico) AtualizarStatus(usuarioID uuid.UUID, cobrancaID int64,
 }
 
 // Deletar remove uma cobrança
-func (s *CobrancaServico) Deletar(usuarioID uuid.UUID, cobrancaID int64) error {
+func (s *CobrancaServico) Deletar(usuarioID uuid.UUID, cobrancaID uuid.UUID) error {
 	// Verificar se cobrança existe
 	_, err := s.cobrancaRepo.BuscarPorID(cobrancaID, usuarioID)
 	if err != nil {
@@ -256,7 +256,7 @@ func (s *CobrancaServico) mapearParaDTO(cobranca *entidades.Cobranca) *dto.Cobra
 	clienteEmail := ""
 	clienteTelefone := ""
 
-	if cobranca.Cliente.ID != 0 {
+	if cobranca.Cliente.ID != uuid.Nil {
 		if cobranca.Cliente.Nome != "" {
 			clienteNome = cobranca.Cliente.Nome
 		}
@@ -288,7 +288,7 @@ func (s *CobrancaServico) mapearParaDTO(cobranca *entidades.Cobranca) *dto.Cobra
 	}
 
 	// Adicionar cliente se carregado
-	if cobranca.Cliente.ID != 0 {
+	if cobranca.Cliente.ID != uuid.Nil {
 		response.Cliente = &dto.ClienteResponse{
 			ID:          cobranca.Cliente.ID,
 			Nome:        cobranca.Cliente.Nome,

@@ -54,7 +54,7 @@ func (ctrl *CobrancaControlador) BuscarPorID(c *gin.Context) {
 		return
 	}
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		util.RespostaErro(c, http.StatusBadRequest, "ID inválido", nil)
 		return
@@ -110,7 +110,7 @@ func (ctrl *CobrancaControlador) Atualizar(c *gin.Context) {
 		return
 	}
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		util.RespostaErro(c, http.StatusBadRequest, "ID inválido", nil)
 		return
@@ -140,7 +140,7 @@ func (ctrl *CobrancaControlador) AtualizarStatus(c *gin.Context) {
 		return
 	}
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		util.RespostaErro(c, http.StatusBadRequest, "ID inválido", nil)
 		return
@@ -170,7 +170,7 @@ func (ctrl *CobrancaControlador) Deletar(c *gin.Context) {
 		return
 	}
 
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		util.RespostaErro(c, http.StatusBadRequest, "ID inválido", nil)
 		return

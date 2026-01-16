@@ -15,7 +15,7 @@ func NovoClienteRepositorio(db *gorm.DB) *ClienteRepositorio {
 }
 
 // BuscarPorID encontra um cliente pelo ID (com validação de usuário)
-func (r *ClienteRepositorio) BuscarPorID(id int64, usuarioID uuid.UUID) (*entidades.Cliente, error) {
+func (r *ClienteRepositorio) BuscarPorID(id uuid.UUID, usuarioID uuid.UUID) (*entidades.Cliente, error) {
 	var cliente entidades.Cliente
 	err := r.db.Where("id = ? AND usuario_id = ?", id, usuarioID).First(&cliente).Error
 	if err != nil {
@@ -62,7 +62,7 @@ func (r *ClienteRepositorio) Atualizar(cliente *entidades.Cliente) error {
 }
 
 // Deletar remove um cliente (com validação de usuário)
-func (r *ClienteRepositorio) Deletar(id int64, usuarioID uuid.UUID) error {
+func (r *ClienteRepositorio) Deletar(id uuid.UUID, usuarioID uuid.UUID) error {
 	return r.db.Where("id = ? AND usuario_id = ?", id, usuarioID).Delete(&entidades.Cliente{}).Error
 }
 
