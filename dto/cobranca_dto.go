@@ -3,12 +3,13 @@ package dto
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/ifinu/ifinu-api-go/dominio/enums"
 )
 
 // CobrancaRequest representa a requisição de criação/atualização de cobrança
 type CobrancaRequest struct {
-	ClienteID       int64                    `json:"clienteId" binding:"required"`
+	ClienteID       uuid.UUID                `json:"clienteId" binding:"required"`
 	Valor           float64                  `json:"valor" binding:"required,gt=0"`
 	Descricao       string                   `json:"descricao" binding:"required"`
 	DataVencimento  time.Time                `json:"dataVencimento" binding:"required"`
@@ -19,8 +20,8 @@ type CobrancaRequest struct {
 
 // CobrancaResponse representa a cobrança na resposta
 type CobrancaResponse struct {
-	ID                             int64                    `json:"id"`
-	ClienteID                      int64                    `json:"clienteId"`
+	ID                             uuid.UUID                `json:"id"`
+	ClienteID                      uuid.UUID                `json:"clienteId"`
 	Cliente                        *ClienteResponse         `json:"cliente,omitempty"`
 	ClienteNome                    string                   `json:"clienteNome"`
 	ClienteEmail                   string                   `json:"clienteEmail,omitempty"`
@@ -57,7 +58,7 @@ type BuscarCobrancasRequest struct {
 	Status        *enums.StatusCobranca `form:"status"`
 	DataInicio    *time.Time            `form:"dataInicio"`
 	DataFim       *time.Time            `form:"dataFim"`
-	ClienteID     *int64                `form:"clienteId"`
+	ClienteID     *uuid.UUID            `form:"clienteId"`
 	Pagina        int                   `form:"pagina" binding:"min=0"`
 	TamanhoPagina int                   `form:"tamanhoPagina" binding:"min=1,max=100"`
 }

@@ -7,7 +7,7 @@ import (
 )
 
 type Cliente struct {
-	ID              int64     `gorm:"primaryKey;autoIncrement" json:"id"`
+	ID              uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	UsuarioID       uuid.UUID `gorm:"type:uuid;not null;index" json:"usuarioId" validate:"required"`
 	Nome            string    `gorm:"type:varchar(255);not null" json:"nome" validate:"required"`
 	Email           string    `gorm:"type:varchar(255)" json:"email" validate:"omitempty,email"`

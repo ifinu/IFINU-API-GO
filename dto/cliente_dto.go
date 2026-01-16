@@ -1,6 +1,10 @@
 package dto
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 // ClienteRequest representa a requisição de criação/atualização de cliente
 type ClienteRequest struct {
@@ -14,7 +18,7 @@ type ClienteRequest struct {
 
 // ClienteResponse representa o cliente na resposta
 type ClienteResponse struct {
-	ID          int64     `json:"id"`
+	ID          uuid.UUID `json:"id"`
 	Nome        string    `json:"nome"`
 	Email       string    `json:"email"`
 	Telefone    string    `json:"telefone"`

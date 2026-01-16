@@ -8,8 +8,8 @@ import (
 )
 
 type Cobranca struct {
-	ID                             int64                      `gorm:"primaryKey;autoIncrement" json:"id"`
-	ClienteID                      int64                      `gorm:"not null;index" json:"clienteId" validate:"required"`
+	ID                             uuid.UUID                  `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	ClienteID                      uuid.UUID                  `gorm:"type:uuid;not null;index" json:"clienteId" validate:"required"`
 	UsuarioID                      uuid.UUID                  `gorm:"type:uuid;not null;index" json:"usuarioId" validate:"required"`
 	Valor                          float64                    `gorm:"type:numeric(10,2);not null" json:"valor" validate:"required,gt=0"`
 	DataVencimento                 time.Time                  `gorm:"type:timestamp;not null" json:"dataVencimento" validate:"required"`
