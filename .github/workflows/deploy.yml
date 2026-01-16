@@ -8,47 +8,39 @@ on:
 
 jobs:
   deploy:
-    name: Deploy para Produção
+    name: Deploy para VPS
     runs-on: self-hosted
 
     steps:
       - name: Checkout código
-        uses: actions/checkout@v3
-
-      - name: Build Docker image
         run: |
-          echo "🔨 Building Docker image..."
-          docker build -t ifinu-api-go:latest .
+          echo "📥 Atualizando código no VPS..."
+          cd /opt/ifinu/api
+          git fetch origin
+          git reset --hard origin/main
+          git pull origin main
 
-      - name: Stop old container
+      - name: Deploy via Docker Compose
         run: |
-          echo "🛑 Stopping old container..."
-          docker stop ifinu-api-go 2>/dev/null || true
-          docker rm ifinu-api-go 2>/dev/null || true
-          docker rm -f ifinu-api-go 2>/dev/null || true
-          sleep 2
+          echo "🔨 Rebuilding e reiniciando API..."
+          cd /opt/ifinu
+          docker compose build api
+          docker compose up -d api
 
-      - name: Start new container
+      - name: Aguardar inicialização
         run: |
-          echo "🚀 Starting new container..."
-          docker run -d \
-            -p 8080:8080 \
-            --name ifinu-api-go \
-            --network ifinu-network \
-            --restart unless-stopped \
-            --env-file /home/mpx/ifinu-api-go/.env \
-            ifinu-api-go:latest
+          echo "⏳ Aguardando API inicializar..."
+          sleep 10
 
       - name: Health check
         run: |
-          echo "💚 Testing health check..."
-          sleep 5
-          curl -f http://localhost:8080/health
+          echo "💚 Testando health check..."
+          curl -f http://localhost:8080/health || exit 1
           echo ""
           echo "✅ Deploy successful!"
 
-      - name: Show status
+      - name: Show logs
         if: always()
         run: |
-          docker ps | grep ifinu-api-go || true
-          docker logs --tail 10 ifinu-api-go || true
+          echo "📋 Últimos logs da API:"
+          docker logs --tail 20 ifinu-api
