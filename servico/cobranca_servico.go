@@ -38,14 +38,15 @@ func (s *CobrancaServico) Criar(usuarioID uuid.UUID, req dto.CobrancaRequest) (*
 
 	// Criar cobrança
 	cobranca := &entidades.Cobranca{
-		UsuarioID:       usuarioID,
-		ClienteID:       req.ClienteID,
-		Valor:           req.Valor,
-		Descricao:       req.Descricao,
-		Status:          enums.StatusCobrancaPendente,
-		DataVencimento:  req.DataVencimento,
-		TipoRecorrencia: req.TipoRecorrencia,
-		DataCriacao:     time.Now(),
+		UsuarioID:        usuarioID,
+		ClienteID:        req.ClienteID,
+		Valor:            req.Valor,
+		Descricao:        req.Descricao,
+		Status:           enums.StatusCobrancaPendente,
+		DataVencimento:   req.DataVencimento,
+		TipoRecorrencia:  req.TipoRecorrencia,
+		RecorrenciaAtiva: req.RecorrenciaAtiva,
+		DataCriacao:      time.Now(),
 	}
 
 	err = s.cobrancaRepo.Criar(cobranca)

@@ -9,13 +9,14 @@ import (
 
 // CobrancaRequest representa a requisição de criação/atualização de cobrança
 type CobrancaRequest struct {
-	ClienteID       uuid.UUID                `json:"clienteId" binding:"required"`
-	Valor           float64                  `json:"valor" binding:"required,gt=0"`
-	Descricao       string                   `json:"descricao" binding:"required"`
-	DataVencimento  time.Time                `json:"dataVencimento" binding:"required"`
-	TipoRecorrencia enums.TipoRecorrencia    `json:"tipoRecorrencia"`
-	EnviarWhatsApp  bool                     `json:"enviarWhatsapp"`
-	EnviarEmail     bool                     `json:"enviarEmail"`
+	ClienteID        uuid.UUID             `json:"clienteId" binding:"required"`
+	Valor            float64               `json:"valor" binding:"required,gt=0"`
+	Descricao        string                `json:"descricao"`
+	DataVencimento   time.Time             `json:"dataVencimento" binding:"required"`
+	TipoRecorrencia  enums.TipoRecorrencia `json:"tipoRecorrencia"`
+	RecorrenciaAtiva bool                  `json:"recorrenciaAtiva"`
+	EnviarWhatsApp   bool                  `json:"enviarWhatsapp"`
+	EnviarEmail      bool                  `json:"enviarEmail"`
 }
 
 // CobrancaResponse representa a cobrança na resposta
