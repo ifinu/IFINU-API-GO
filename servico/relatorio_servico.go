@@ -1,6 +1,7 @@
 package servico
 
 import (
+	"math"
 	"sort"
 	"time"
 
@@ -19,6 +20,73 @@ func NovoRelatorioServico(clienteRepo *repositorio.ClienteRepositorio, cobrancaR
 		clienteRepo:  clienteRepo,
 		cobrancaRepo: cobrancaRepo,
 	}
+}
+
+// ObterHistoricoPagamentos retorna histórico completo de pagamentos com paginação
+func (s *RelatorioServico) ObterHistoricoPagamentos(usuarioID uuid.UUID, pagina, tamanhoPagina int) (map[string]interface{}, error) {
+	if pagina < 1 {
+		pagina = 1
+	}
+	if tamanhoPagina < 1 {
+		tamanhoPagina = 20
+	}
+
+	cobrancas, err := s.cobrancaRepo.BuscarPorUsuario(usuarioID)
+	if err != nil {
+		return nil, err
+	}
+
+	var pagamentosList []map[string]interface{}
+	var valorTotalPago float64
+
+	for _, cobranca := range cobrancas {
+		if cobranca.Status == enums.StatusCobrancaPago && cobranca.DataPagamento != nil {
+			pagamentosList = append(pagamentosList, map[string]interface{}{
+				"cobrancaId":     cobranca.ID,
+				"clienteNome":    cobranca.Cliente.Nome,
+				"clienteId":      cobranca.ClienteID,
+				"valor":          cobranca.Valor,
+				"dataPagamento":  cobranca.DataPagamento,
+				"dataVencimento": cobranca.DataVencimento,
+				"descricao":      cobranca.Descricao,
+				"tipoRecorrencia": cobranca.TipoRecorrencia,
+			})
+			valorTotalPago += cobranca.Valor
+		}
+	}
+
+	sort.Slice(pagamentosList, func(i, j int) bool {
+		dataI := pagamentosList[i]["dataPagamento"].(*time.Time)
+		dataJ := pagamentosList[j]["dataPagamento"].(*time.Time)
+		return dataI.After(*dataJ)
+	})
+
+	total := len(pagamentosList)
+	inicio := (pagina - 1) * tamanhoPagina
+	fim := inicio + tamanhoPagina
+
+	if inicio > total {
+		inicio = total
+	}
+	if fim > total {
+		fim = total
+	}
+
+	pagamentosPaginados := []map[string]interface{}{}
+	if inicio < total {
+		pagamentosPaginados = pagamentosList[inicio:fim]
+	}
+
+	totalPaginas := int(math.Ceil(float64(total) / float64(tamanhoPagina)))
+
+	return map[string]interface{}{
+		"pagamentos":     pagamentosPaginados,
+		"total":          total,
+		"pagina":         pagina - 1,
+		"tamanhoPagina":  tamanhoPagina,
+		"totalPaginas":   totalPaginas,
+		"valorTotalPago": valorTotalPago,
+	}, nil
 }
 
 // ObterDashboard retorna estatísticas completas do dashboard

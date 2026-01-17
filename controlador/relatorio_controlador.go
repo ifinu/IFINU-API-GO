@@ -1,6 +1,7 @@
 package controlador
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -35,4 +36,30 @@ func (ctrl *RelatorioControlador) Dashboard(c *gin.Context) {
 	}
 
 	util.RespostaSucesso(c, "Dashboard obtido com sucesso", dashboard)
+}
+
+// HistoricoPagamentos retorna histórico completo de pagamentos
+// GET /api/relatorios/pagamentos
+func (ctrl *RelatorioControlador) HistoricoPagamentos(c *gin.Context) {
+	usuarioID, exists := middleware.ObterUsuarioID(c)
+	if !exists {
+		util.RespostaErro(c, http.StatusUnauthorized, "Usuário não autenticado", nil)
+		return
+	}
+
+	var pagina, tamanhoPagina int
+	if p, ok := c.GetQuery("pagina"); ok {
+		_, _ = fmt.Sscanf(p, "%d", &pagina)
+	}
+	if t, ok := c.GetQuery("tamanhoPagina"); ok {
+		_, _ = fmt.Sscanf(t, "%d", &tamanhoPagina)
+	}
+
+	historico, err := ctrl.relatorioServico.ObterHistoricoPagamentos(usuarioID, pagina, tamanhoPagina)
+	if err != nil {
+		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao obter histórico de pagamentos", err)
+		return
+	}
+
+	util.RespostaSucesso(c, "Histórico obtido com sucesso", historico)
 }

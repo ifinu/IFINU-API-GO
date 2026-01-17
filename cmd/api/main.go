@@ -260,6 +260,7 @@ func main() {
 			relatorios := protegido.Group("/relatorios")
 			{
 				relatorios.GET("/dashboard", relatorioController.Dashboard)
+				relatorios.GET("/pagamentos", relatorioController.HistoricoPagamentos)
 			}
 
 			// Rotas de Stripe Connect
