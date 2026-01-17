@@ -55,7 +55,12 @@ func (ctrl *StripeControlador) CreateCheckoutSession(c *gin.Context) {
 
 	resultado, err := ctrl.stripeServico.CriarCheckoutSession(usuarioID, &req)
 	if err != nil {
-		util.RespostaErro(c, http.StatusInternalServerError, "Erro ao criar sessão de checkout", err)
+		// Log detalhado do erro
+		c.Error(err)
+		util.RespostaErro(c, http.StatusInternalServerError, err.Error(), map[string]interface{}{
+			"usuario_id": usuarioID.String(),
+			"cobranca_id": req.CobrancaID,
+		})
 		return
 	}
 
