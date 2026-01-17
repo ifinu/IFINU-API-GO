@@ -16,23 +16,23 @@ type Cobranca struct {
 	DataPagamento                  *time.Time                 `gorm:"type:timestamp" json:"dataPagamento"`
 	Status                         enums.StatusCobranca       `gorm:"type:varchar(20);not null;default:'PENDENTE'" json:"status"`
 	Descricao                      string                     `gorm:"type:varchar(255)" json:"descricao"`
-	TipoRecorrencia                enums.TipoRecorrencia      `gorm:"type:varchar(20);default:'UNICA'" json:"tipoRecorrencia"`
-	IntervaloPeriodo               int                        `gorm:"type:integer" json:"intervaloPeriodo"`
-	UnidadeTempo                   string                     `gorm:"type:varchar(20)" json:"unidadeTempo"`
-	ProximaCobranca                *time.Time                 `gorm:"type:timestamp" json:"proximaCobranca"`
-	RecorrenciaAtiva               bool                       `gorm:"default:false" json:"recorrenciaAtiva"`
-	NotificacaoEnviada             bool                       `gorm:"default:false" json:"notificacaoEnviada"`
-	NotificacaoLembreteEnviada     bool                       `gorm:"default:false" json:"notificacaoLembreteEnviada"`
-	NotificacaoVencimentoEnviada   bool                       `gorm:"default:false" json:"notificacaoVencimentoEnviada"`
-	ConfirmacaoPagamentoEnviada    bool                       `gorm:"default:false" json:"confirmacaoPagamentoEnviada"`
-	TentativasNotificacao          int                        `gorm:"type:integer;not null;default:0" json:"tentativasNotificacao"`
-	AsaasPaymentID                 string                     `gorm:"type:varchar(255)" json:"asaasPaymentId"`
-	AsaasStatus                    string                     `gorm:"type:varchar(50)" json:"asaasStatus"`
-	AsaasPaymentURL                string                     `gorm:"type:text" json:"asaasPaymentUrl"`
-	StripeSessionID                string                     `gorm:"type:varchar(255)" json:"stripeSessionId"`
-	StripeCheckoutID               string                     `gorm:"type:varchar(255)" json:"stripeCheckoutId"`
-	StripePaymentIntentID          string                     `gorm:"type:varchar(255)" json:"stripePaymentIntentId"`
-	EmailCliente                   string                     `gorm:"type:varchar(255)" json:"emailCliente"`
+	TipoRecorrencia                enums.TipoRecorrencia      `gorm:"column:tipo_recorrencia;type:varchar(20);default:'UNICA'" json:"tipoRecorrencia"`
+	IntervaloPeriodo               int                        `gorm:"column:intervalo_periodo;type:integer" json:"intervaloPeriodo"`
+	UnidadeTempo                   string                     `gorm:"column:unidade_tempo;type:varchar(20)" json:"unidadeTempo"`
+	ProximaCobranca                *time.Time                 `gorm:"column:proxima_cobranca;type:timestamp" json:"proximaCobranca"`
+	RecorrenciaAtiva               bool                       `gorm:"column:recorrencia_ativa;default:false" json:"recorrenciaAtiva"`
+	NotificacaoEnviada             bool                       `gorm:"column:notificacao_enviada;default:false" json:"notificacaoEnviada"`
+	NotificacaoLembreteEnviada     bool                       `gorm:"column:notificacao_lembrete_enviada;default:false" json:"notificacaoLembreteEnviada"`
+	NotificacaoVencimentoEnviada   bool                       `gorm:"column:notificacao_vencimento_enviada;default:false" json:"notificacaoVencimentoEnviada"`
+	ConfirmacaoPagamentoEnviada    bool                       `gorm:"column:confirmacao_pagamento_enviada;default:false" json:"confirmacaoPagamentoEnviada"`
+	TentativasNotificacao          int                        `gorm:"column:tentativas_notificacao;type:integer;not null;default:0" json:"tentativasNotificacao"`
+	AsaasPaymentID                 string                     `gorm:"column:asaas_payment_id;type:varchar(255)" json:"asaasPaymentId"`
+	AsaasStatus                    string                     `gorm:"column:asaas_status;type:varchar(50)" json:"asaasStatus"`
+	AsaasPaymentURL                string                     `gorm:"column:asaas_payment_url;type:text" json:"asaasPaymentUrl"`
+	StripeSessionID                string                     `gorm:"column:stripe_session_id;type:varchar(255)" json:"stripeSessionId"`
+	StripeCheckoutID               string                     `gorm:"column:stripe_checkout_id;type:varchar(255)" json:"stripeCheckoutId"`
+	StripePaymentIntentID          string                     `gorm:"column:stripe_payment_intent_id;type:varchar(255)" json:"stripePaymentIntentId"`
+	EmailCliente                   string                     `gorm:"column:email_cliente;type:varchar(255)" json:"emailCliente"`
 	DataCriacao                    time.Time                  `gorm:"autoCreateTime" json:"dataCriacao"`
 	DataAtualizacao                time.Time                  `gorm:"autoUpdateTime" json:"dataAtualizacao"`
 
