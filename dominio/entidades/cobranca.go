@@ -16,11 +16,11 @@ type Cobranca struct {
 	DataPagamento                  *time.Time                 `gorm:"type:timestamp" json:"dataPagamento"`
 	Status                         enums.StatusCobranca       `gorm:"type:varchar(20);not null;default:'PENDENTE'" json:"status"`
 	Descricao                      string                     `gorm:"type:varchar(255)" json:"descricao"`
-	TipoRecorrencia                enums.TipoRecorrencia      `gorm:"type:varchar(20);default:'UNICA'" json:"tipoRecorrencia"`
-	IntervaloPeriodo               int                        `gorm:"type:integer" json:"intervaloPeriodo"`
-	UnidadeTempo                   string                     `gorm:"type:varchar(20)" json:"unidadeTempo"`
-	ProximaCobranca                *time.Time                 `gorm:"type:timestamp" json:"proximaCobranca"`
-	RecorrenciaAtiva               bool                       `gorm:"default:false" json:"recorrenciaAtiva"`
+	TipoRecorrencia                enums.TipoRecorrencia      `gorm:"-" json:"tipoRecorrencia"`
+	IntervaloPeriodo               int                        `gorm:"-" json:"intervaloPeriodo"`
+	UnidadeTempo                   string                     `gorm:"-" json:"unidadeTempo"`
+	ProximaCobranca                *time.Time                 `gorm:"-" json:"proximaCobranca"`
+	RecorrenciaAtiva               bool                       `gorm:"-" json:"recorrenciaAtiva"`
 	NotificacaoEnviada             bool                       `gorm:"default:false" json:"notificacaoEnviada"`
 	NotificacaoLembreteEnviada     bool                       `gorm:"default:false" json:"notificacaoLembreteEnviada"`
 	NotificacaoVencimentoEnviada   bool                       `gorm:"default:false" json:"notificacaoVencimentoEnviada"`
