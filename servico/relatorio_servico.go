@@ -28,11 +28,6 @@ func (s *RelatorioServico) ObterDashboard(usuarioID uuid.UUID) (map[string]inter
 		return nil, err
 	}
 
-	clientes, err := s.clienteRepo.BuscarPorUsuario(usuarioID)
-	if err != nil {
-		return nil, err
-	}
-
 	totalCobrancas := int64(len(cobrancas))
 
 	var valorTotal, valorPago, valorPendente, valorVencido, valorPagoMes float64
