@@ -3,6 +3,7 @@ package servico
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -76,6 +77,9 @@ func (s *StripeServico) CriarCheckoutSession(usuarioID uuid.UUID, req *dto.Creat
 	// Converter valor para centavos (Stripe usa centavos)
 	valorCentavos := int64(req.Valor * 100)
 
+	// Garantir que a moeda está em lowercase (requisito do Stripe)
+	moeda := strings.ToLower(req.Moeda)
+
 	// Criar parâmetros da sessão
 	params := &stripe.CheckoutSessionParams{
 		PaymentMethodTypes: stripe.StringSlice([]string{"card"}),
@@ -85,7 +89,7 @@ func (s *StripeServico) CriarCheckoutSession(usuarioID uuid.UUID, req *dto.Creat
 		LineItems: []*stripe.CheckoutSessionLineItemParams{
 			{
 				PriceData: &stripe.CheckoutSessionLineItemPriceDataParams{
-					Currency: stripe.String(req.Moeda),
+					Currency: stripe.String(moeda),
 					ProductData: &stripe.CheckoutSessionLineItemPriceDataProductDataParams{
 						Name:        stripe.String(req.Descricao),
 						Description: stripe.String(fmt.Sprintf("Cobrança #%s", req.CobrancaID)),
