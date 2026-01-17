@@ -203,12 +203,17 @@ func (s *CobrancaServico) AtualizarStatus(usuarioID uuid.UUID, cobrancaID uuid.U
 // Deletar remove uma cobrança
 func (s *CobrancaServico) Deletar(usuarioID uuid.UUID, cobrancaID uuid.UUID) error {
 	// Verificar se cobrança existe
-	_, err := s.cobrancaRepo.BuscarPorID(cobrancaID, usuarioID)
+	cobranca, err := s.cobrancaRepo.BuscarPorID(cobrancaID, usuarioID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("cobrança não encontrada")
 		}
 		return err
+	}
+
+	// Validação: não permitir deletar cobranças pagas
+	if cobranca.Status == enums.StatusCobrancaPago {
+		return errors.New("não é possível cancelar uma cobrança já paga")
 	}
 
 	return s.cobrancaRepo.Deletar(cobrancaID, usuarioID)
