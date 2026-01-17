@@ -16,7 +16,6 @@ type Cobranca struct {
 	DataPagamento                  *time.Time                 `gorm:"type:timestamp" json:"dataPagamento"`
 	Status                         enums.StatusCobranca       `gorm:"type:varchar(20);not null;default:'PENDENTE'" json:"status"`
 	Descricao                      string                     `gorm:"type:varchar(255)" json:"descricao"`
-	Observacoes                    string                     `gorm:"type:text" json:"observacoes"`
 	TipoRecorrencia                enums.TipoRecorrencia      `gorm:"type:varchar(20);default:'UNICA'" json:"tipoRecorrencia"`
 	IntervaloPeriodo               int                        `gorm:"type:integer" json:"intervaloPeriodo"`
 	UnidadeTempo                   string                     `gorm:"type:varchar(20)" json:"unidadeTempo"`
