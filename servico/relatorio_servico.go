@@ -34,7 +34,6 @@ func (s *RelatorioServico) ObterDashboard(usuarioID uuid.UUID) (map[string]inter
 	}
 
 	totalCobrancas := int64(len(cobrancas))
-	totalClientes := int64(len(clientes))
 
 	var valorTotal, valorPago, valorPendente, valorVencido, valorPagoMes float64
 	var totalPagas, totalPendentes, totalVencidas int64
